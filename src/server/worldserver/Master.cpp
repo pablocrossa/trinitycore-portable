@@ -137,6 +137,8 @@ int Master::Run()
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "                                 C O R E  /\\___/");
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "http://TrinityCore.org                    \\/__/\n");
 
+
+
     /// worldserver PID file creation
     std::string pidfile = ConfigMgr::GetStringDefault("PidFile", "");
     if (!pidfile.empty())
