@@ -137,13 +137,6 @@ int Master::Run()
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "                                 C O R E  /\\___/");
     sLog->outInfo(LOG_FILTER_WORLDSERVER, "http://TrinityCore.org                    \\/__/\n");
 
-#ifdef USE_MERSENNETWISTER
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "\n");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "MersenneTwister has been enabled as the random number generator and SSE2 is disabled. ");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "If the generation seems slow consider not skipping SSE2 in the compilation configuration.");
-    sLog->outInfo(LOG_FILTER_WORLDSERVER, "\n");
-#endif
-
     /// worldserver PID file creation
     std::string pidfile = ConfigMgr::GetStringDefault("PidFile", "");
     if (!pidfile.empty())
