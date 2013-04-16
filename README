@@ -1,6 +1,7 @@
-= TrinityCore -- General information =
+= TrinityCore-Portable -- General information =
 
 Copyright (C) TrinityCore (http://www.trinitycore.org)
+Modifications for portability by Pablo Crossa
 
   Trinity Core is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,10 +48,22 @@ sql/updates directory.
 
 TrinityCore Requirements
 Platform: Linux, Windows or Mac
-Processor with SSE2 support
+Processor with SSE2 support (Unless you compile with cmake option "SKIP_SSE2")
 ACE ≥ 5.8.3
 MySQL ≥ 5.1.0
 CMake ≥ 2.8.0
 OpenSSL ≥ 0.9.8o
 GCC ≥ 4.3 (Linux only)
 MS Visual Studio ≥ 9 (2008) (Windows only)
+
+For compilation on other architectures than x86/x64 you must use the cmake option "STANDARDIZE_ASM" (This will automatically enable SKIP_SSE2).
+
+Example for compilation: cmake -DSKIP_SSE2=1 -DSTANDARDIZE_ASM=1 -DPREFIX=/home/<username>/server
+
+This compiles on the Raspberry Pi's 'Raspbian' following the Wiki from TrinityCore with mild variations:
+  Use unrar-free instead of unrar
+  Use the libace-dev from Raspbian instead of compiling
+
+I haven't tested this in any architecture other than ARM but others might work with GCC/ICC/MINGW
+
+Just don't use CLANG...
