@@ -62,7 +62,7 @@ Example for compilation: cmake -DSKIP_SSE2=1 -DSTANDARDIZE_ASM=1 -DPREFIX=/home/
 
 This compiles on the Raspberry Pi's 'Raspbian' following the Wiki from TrinityCore with mild variations:
   Use unrar-free instead of unrar
-  Use the libace-dev from Raspbian instead of compiling
+  Use the libace-dev from Raspbian instead of compiling (compiling is slow)
 
 I haven't tested this in any architecture other than ARM but others might work with GCC/ICC/MINGW
 
