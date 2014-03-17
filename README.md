@@ -19,7 +19,6 @@ For further information on the TrinityCore project, please visit our project
 website at [TrinityCore.org](http://www.trinitycore.org).
 
 Modifications for portability by Pablo Crossa
-
 trinitycore-portable.patch attached to allow patching of newer versions easily
 
 ## Requirements
@@ -44,15 +43,23 @@ Detailed installation guides are available in the wiki for
 
 For compilation on other architectures than x86/x64 you must use the cmake option "STANDARDIZE_ASM" (This will automatically enable SKIP_SSE2).
 
-Example for compilation: cmake -DSKIP_SSE2=1 -DSTANDARDIZE_ASM=1 -DPREFIX=/home/<username>/server
+Example for compilation/installation:
+cd ~
+mkdir TCP
+cd TCP
+git clone https://github.com/pablocrossa/trinitycore-portable.git
+mkdir build
+mkdir server
+cd build
+cmake ../trinitycore-portable -DSKIP_SSE2=1 -DSTANDARDIZE_ASM=1 -DPREFIX=~/TCP/server
+make
+make install
 
-This compiles on the Raspberry Pi's 'Raspbian' following the Wiki from TrinityCore with mild variations:
-  Use unrar-free instead of unrar
-  Use the libace-dev from Raspbian instead of compiling (compiling is slow)
+This compiles on the Raspberry Pi's 'Raspbian' following the Wiki from TrinityCore with mild variations, mainly using unrar-free instead of unrar and using the libace-dev from Raspbian instead of compiling (compiling is slow)
 
 I haven't tested this in any architecture other than ARM (it does compile on PowerPC) but others might work with GCC/ICC/MINGW
 
-Just don't use CLANG...
+Just don't use CLANG (untested)...
 
 
 ## Reporting issues
