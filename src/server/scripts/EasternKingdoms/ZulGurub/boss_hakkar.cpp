@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -51,38 +51,38 @@ enum Spells
 
 enum Events
 {
-    EVENT_BLOOD_SIPHON          = 0,
-    EVENT_CORRUPTED_BLOOD       = 1,
-    EVENT_CAUSE_INSANITY        = 2,     // Spell needs scripting. Event disabled
-    EVENT_WILL_OF_HAKKAR        = 3,
-    EVENT_ENRAGE                = 4,
+    EVENT_BLOOD_SIPHON          = 1,
+    EVENT_CORRUPTED_BLOOD       = 2,
+    EVENT_CAUSE_INSANITY        = 3,     // Spell needs scripting. Event disabled
+    EVENT_WILL_OF_HAKKAR        = 4,
+    EVENT_ENRAGE                = 5,
     // The Aspects of all High Priests events
-    EVENT_ASPECT_OF_JEKLIK      = 5,
-    EVENT_ASPECT_OF_VENOXIS     = 6,
-    EVENT_ASPECT_OF_MARLI       = 7,
-    EVENT_ASPECT_OF_THEKAL      = 8,
-    EVENT_ASPECT_OF_ARLOKK      = 9
+    EVENT_ASPECT_OF_JEKLIK      = 6,
+    EVENT_ASPECT_OF_VENOXIS     = 7,
+    EVENT_ASPECT_OF_MARLI       = 8,
+    EVENT_ASPECT_OF_THEKAL      = 9,
+    EVENT_ASPECT_OF_ARLOKK      = 10
 };
 
 class boss_hakkar : public CreatureScript
 {
-    public: boss_hakkar() : CreatureScript("boss_hakkar") {}
+    public: boss_hakkar() : CreatureScript("boss_hakkar") { }
 
         struct boss_hakkarAI : public BossAI
         {
-            boss_hakkarAI(Creature* creature) : BossAI(creature, DATA_HAKKAR) {}
+            boss_hakkarAI(Creature* creature) : BossAI(creature, DATA_HAKKAR) { }
 
-            void Reset()
+            void Reset() OVERRIDE
             {
                 _Reset();
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
                 _JustDied();
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
                 _EnterCombat();
                 events.ScheduleEvent(EVENT_BLOOD_SIPHON, 90000);
@@ -103,7 +103,7 @@ class boss_hakkar : public CreatureScript
                 Talk(SAY_AGGRO);
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -167,9 +167,9 @@ class boss_hakkar : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return new boss_hakkarAI(creature);
+            return GetInstanceAI<boss_hakkarAI>(creature);
         }
 };
 

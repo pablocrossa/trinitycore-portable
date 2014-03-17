@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "Cryptography/BigNumber.h"
+#include "AccountMgr.h"
 
 class Creature;
 class GameObject;
@@ -39,7 +40,6 @@ class LoginQueryHolder;
 class Object;
 class Player;
 class Quest;
-class RBACData;
 class SpellCastTargets;
 class Unit;
 class Warden;
@@ -62,6 +62,11 @@ struct LfgRoleCheck;
 struct LfgUpdateData;
 }
 
+namespace rbac
+{
+class RBACData;
+}
+
 enum AccountDataType
 {
     GLOBAL_CONFIG_CACHE             = 0,                    // 0x01 g
@@ -81,7 +86,7 @@ enum AccountDataType
 
 struct AccountData
 {
-    AccountData() : Time(0), Data("") {}
+    AccountData() : Time(0), Data("") { }
 
     time_t Time;
     std::string Data;
@@ -125,8 +130,8 @@ enum CharterTypes
 class PacketFilter
 {
 public:
-    explicit PacketFilter(WorldSession* pSession) : m_pSession(pSession) {}
-    virtual ~PacketFilter() {}
+    explicit PacketFilter(WorldSession* pSession) : m_pSession(pSession) { }
+    virtual ~PacketFilter() { }
 
     virtual bool Process(WorldPacket* /*packet*/) { return true; }
     virtual bool ProcessLogout() const { return true; }
@@ -138,8 +143,8 @@ protected:
 class MapSessionFilter : public PacketFilter
 {
 public:
-    explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
-    ~MapSessionFilter() {}
+    explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
+    ~MapSessionFilter() { }
 
     virtual bool Process(WorldPacket* packet);
     //in Map::Update() we do not process player logout!
@@ -151,8 +156,8 @@ public:
 class WorldSessionFilter : public PacketFilter
 {
 public:
-    explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) {}
-    ~WorldSessionFilter() {}
+    explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
+    ~WorldSessionFilter() { }
 
     virtual bool Process(WorldPacket* packet);
 };
@@ -168,7 +173,7 @@ class CharacterCreateInfo
         CharacterCreateInfo(std::string const& name, uint8 race, uint8 cclass, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId,
         WorldPacket& data) : Name(name), Race(race), Class(cclass), Gender(gender), Skin(skin), Face(face), HairStyle(hairStyle), HairColor(hairColor), FacialHair(facialHair),
         OutfitId(outfitId), Data(data), CharCount(0)
-        {}
+        { }
 
         /// User specified variables
         std::string Name;
@@ -217,7 +222,7 @@ class WorldSession
         void SendAuthResponse(uint8 code, bool shortForm, uint32 queuePos = 0);
         void SendClientCacheVersion(uint32 version);
 
-        RBACData* GetRBACData();
+        rbac::RBACData* GetRBACData();
         bool HasPermission(uint32 permissionId);
         void LoadPermissions();
         void InvalidateRBACData(); // Used to force LoadPermissions at next HasPermission check
@@ -270,6 +275,8 @@ class WorldSession
         void SendTrainerList(uint64 guid, std::string const& strTitle);
         void SendListInventory(uint64 guid);
         void SendShowBank(uint64 guid);
+        bool CanOpenMailBox(uint64 guid);
+        void SendShowMailBox(uint64 guid);
         void SendTabardVendorActivate(uint64 guid);
         void SendSpiritResurrect();
         void SendBindPoint(Creature* npc);
@@ -322,7 +329,7 @@ class WorldSession
         void SendAuctionOwnerNotification(AuctionEntry* auction);
 
         //Item Enchantment
-        void SendEnchantmentLog(uint64 Target, uint64 Caster, uint32 ItemID, uint32 SpellID);
+        void SendEnchantmentLog(uint64 target, uint64 caster, uint32 itemId, uint32 enchantId);
         void SendItemEnchantTimeUpdate(uint64 Playerguid, uint64 Itemguid, uint32 slot, uint32 Duration);
 
         //Taxi
@@ -351,12 +358,12 @@ class WorldSession
 
         uint32 GetLatency() const { return m_latency; }
         void SetLatency(uint32 latency) { m_latency = latency; }
-        uint32 getDialogStatus(Player* player, Object* questgiver, uint32 defstatus);
+        void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
 
-        time_t m_timeOutTime;
+        ACE_Atomic_Op<ACE_Thread_Mutex, time_t> m_timeOutTime;
         void UpdateTimeOutTime(uint32 diff)
         {
-            if (time_t(diff) > m_timeOutTime)
+            if (time_t(diff) > m_timeOutTime.value())
                 m_timeOutTime = 0;
             else
                 m_timeOutTime -= diff;
@@ -751,6 +758,16 @@ class WorldSession
         void HandleBattlemasterJoinArena(WorldPacket& recvData);
         void HandleReportPvPAFK(WorldPacket& recvData);
 
+        // Battlefield
+        void SendBfInvitePlayerToWar(uint32 battleId, uint32 zoneId, uint32 time);
+        void SendBfInvitePlayerToQueue(uint32 battleId);
+        void SendBfQueueInviteResponse(uint32 battleId, uint32 zoneId, bool canQueue = true, bool full = false);
+        void SendBfEntered(uint32 battleId);
+        void SendBfLeaveMessage(uint32 battleId, BFLeaveReason reason = BF_LEAVE_REASON_EXITED);
+        void HandleBfQueueInviteResponse(WorldPacket& recvData);
+        void HandleBfEntryInviteResponse(WorldPacket& recvData);
+        void HandleBfExitRequest(WorldPacket& recvData);
+
         void HandleWardenDataOpcode(WorldPacket& recvData);
         void HandleWorldTeleportOpcode(WorldPacket& recvData);
         void HandleMinimapPingOpcode(WorldPacket& recvData);
@@ -766,16 +783,6 @@ class WorldSession
         void HandleResetInstancesOpcode(WorldPacket& recvData);
         void HandleHearthAndResurrect(WorldPacket& recvData);
         void HandleInstanceLockResponse(WorldPacket& recvPacket);
-
-        // Battlefield
-        void SendBfInvitePlayerToWar(uint32 battleId, uint32 zoneId, uint32 time);
-        void SendBfInvitePlayerToQueue(uint32 battleId);
-        void SendBfQueueInviteResponse(uint32 battleId, uint32 zoneId, bool canQueue = true, bool full = false);
-        void SendBfEntered(uint32 battleId);
-        void SendBfLeaveMessage(uint32 battleId, BFLeaveReason reason = BF_LEAVE_REASON_EXITED);
-        void HandleBfQueueInviteResponse(WorldPacket& recvData);
-        void HandleBfEntryInviteResponse(WorldPacket& recvData);
-        void HandleBfExitRequest(WorldPacket& recvData);
 
         // Looking for Dungeon/Raid
         void HandleLfgSetCommentOpcode(WorldPacket& recvData);
@@ -911,6 +918,40 @@ class WorldSession
         QueryCallback<PreparedQueryResult, CharacterCreateInfo*, true> _charCreateCallback;
         QueryResultHolderFuture _charLoginCallback;
 
+    friend class World;
+    protected:
+        class DosProtection
+        {
+            friend class World;
+            public:
+                DosProtection(WorldSession* s) : Session(s), _policy((Policy)sWorld->getIntConfig(CONFIG_PACKET_SPOOF_POLICY)) { }
+                bool EvaluateOpcode(WorldPacket& p) const;
+                void AllowOpcode(uint16 opcode, bool allow) { _isOpcodeAllowed[opcode] = allow; }
+            protected:
+                enum Policy
+                {
+                    POLICY_LOG,
+                    POLICY_KICK,
+                    POLICY_BAN,
+                };
+
+                bool IsOpcodeAllowed(uint16 opcode) const
+                {
+                    OpcodeStatusMap::const_iterator itr = _isOpcodeAllowed.find(opcode);
+                    if (itr == _isOpcodeAllowed.end())
+                        return true;    // No presence in the map indicates this is the first time the opcode was sent this session, so allow
+
+                    return itr->second;
+                }
+
+                WorldSession* Session;
+
+            private:
+                typedef UNORDERED_MAP<uint16, bool> OpcodeStatusMap;
+                OpcodeStatusMap _isOpcodeAllowed; // could be bool array, but wouldn't be practical for game versions with non-linear opcodes
+                Policy _policy;
+        } AntiDOS;
+
     private:
         // private trade methods
         void moveItems(Item* myItems[], Item* hisItems[]);
@@ -952,6 +993,7 @@ class WorldSession
         LocaleConstant m_sessionDbcLocale;
         LocaleConstant m_sessionDbLocaleIndex;
         uint32 m_latency;
+        uint32 m_clientTimeDelay;
         AccountData m_accountData[NUM_ACCOUNT_DATA_TYPES];
         uint32 m_Tutorials[MAX_ACCOUNT_TUTORIAL_VALUES];
         bool   m_TutorialsChanged;
@@ -960,7 +1002,7 @@ class WorldSession
         bool isRecruiter;
         ACE_Based::LockedQueue<WorldPacket*, ACE_Thread_Mutex> _recvQueue;
         time_t timeLastWhoCommand;
-        RBACData* _RBACData;
+        rbac::RBACData* _RBACData;
 };
 #endif
 /// @}

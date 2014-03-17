@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -107,9 +107,7 @@ struct DynTreeImpl : public ParentTree/*, public Intersectable*/
     int unbalanced_times;
 };
 
-DynamicMapTree::DynamicMapTree() : impl(new DynTreeImpl())
-{
-}
+DynamicMapTree::DynamicMapTree() : impl(new DynTreeImpl()) { }
 
 DynamicMapTree::~DynamicMapTree()
 {
@@ -150,7 +148,7 @@ struct DynamicTreeIntersectionCallback
 {
     bool did_hit;
     uint32 phase_mask;
-    DynamicTreeIntersectionCallback(uint32 phasemask) : did_hit(false), phase_mask(phasemask) {}
+    DynamicTreeIntersectionCallback(uint32 phasemask) : did_hit(false), phase_mask(phasemask) { }
     bool operator()(const G3D::Ray& r, const GameObjectModel& obj, float& distance)
     {
         did_hit = obj.intersectRay(r, distance, true, phase_mask);
@@ -165,16 +163,16 @@ struct DynamicTreeIntersectionCallback_WithLogger
     uint32 phase_mask;
     DynamicTreeIntersectionCallback_WithLogger(uint32 phasemask) : did_hit(false), phase_mask(phasemask)
     {
-        sLog->outDebug(LOG_FILTER_MAPS, "Dynamic Intersection log");
+        TC_LOG_DEBUG("maps", "Dynamic Intersection log");
     }
     bool operator()(const G3D::Ray& r, const GameObjectModel& obj, float& distance)
     {
-        sLog->outDebug(LOG_FILTER_MAPS, "testing intersection with %s", obj.name.c_str());
+        TC_LOG_DEBUG("maps", "testing intersection with %s", obj.name.c_str());
         bool hit = obj.intersectRay(r, distance, true, phase_mask);
         if (hit)
         {
             did_hit = true;
-            sLog->outDebug(LOG_FILTER_MAPS, "result: intersects");
+            TC_LOG_DEBUG("maps", "result: intersects");
         }
         return hit;
     }

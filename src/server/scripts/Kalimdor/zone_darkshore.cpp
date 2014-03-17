@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -63,42 +63,23 @@ class npc_kerlonian : public CreatureScript
 public:
     npc_kerlonian() : CreatureScript("npc_kerlonian") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest)
-    {
-        if (quest->GetQuestId() == QUEST_SLEEPER_AWAKENED)
-        {
-            if (npc_kerlonianAI* pKerlonianAI = CAST_AI(npc_kerlonian::npc_kerlonianAI, creature->AI()))
-            {
-                creature->SetStandState(UNIT_STAND_STATE_STAND);
-                creature->AI()->Talk(SAY_KER_START, player->GetGUID());
-                pKerlonianAI->StartFollow(player, FACTION_KER_ESCORTEE, quest);
-            }
-        }
-
-        return true;
-    }
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_kerlonianAI(creature);
-    }
-
     struct npc_kerlonianAI : public FollowerAI
     {
         npc_kerlonianAI(Creature* creature) : FollowerAI(creature) { }
 
         uint32 FallAsleepTimer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             FallAsleepTimer = urand(10000, 45000);
         }
 
-        void MoveInLineOfSight(Unit* who)
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+
         {
             FollowerAI::MoveInLineOfSight(who);
 
-            if (!me->getVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_LILADRIS)
+            if (!me->GetVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_LILADRIS)
             {
                 if (me->IsWithinDistInMap(who, INTERACTION_DISTANCE*5))
                 {
@@ -115,7 +96,7 @@ public:
             }
         }
 
-        void SpellHit(Unit* /*pCaster*/, const SpellInfo* pSpell)
+        void SpellHit(Unit* /*pCaster*/, const SpellInfo* pSpell) OVERRIDE
         {
             if (HasFollowState(STATE_FOLLOW_INPROGRESS | STATE_FOLLOW_PAUSED) && pSpell->Id == SPELL_AWAKEN)
                 ClearSleeping();
@@ -143,7 +124,7 @@ public:
             SetFollowPaused(false);
         }
 
-        void UpdateFollowerAI(uint32 Diff)
+        void UpdateFollowerAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
             {
@@ -152,13 +133,13 @@ public:
 
                 if (!HasFollowState(STATE_FOLLOW_PAUSED))
                 {
-                    if (FallAsleepTimer <= Diff)
+                    if (FallAsleepTimer <= diff)
                     {
                         SetSleeping();
                         FallAsleepTimer = urand(25000, 90000);
                     }
                     else
-                        FallAsleepTimer -= Diff;
+                        FallAsleepTimer -= diff;
                 }
 
                 return;
@@ -168,6 +149,25 @@ public:
         }
     };
 
+    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest) OVERRIDE
+    {
+        if (quest->GetQuestId() == QUEST_SLEEPER_AWAKENED)
+        {
+            if (npc_kerlonianAI* pKerlonianAI = CAST_AI(npc_kerlonian::npc_kerlonianAI, creature->AI()))
+            {
+                creature->SetStandState(UNIT_STAND_STATE_STAND);
+                creature->AI()->Talk(SAY_KER_START, player);
+                pKerlonianAI->StartFollow(player, FACTION_KER_ESCORTEE, quest);
+            }
+        }
+
+        return true;
+    }
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_kerlonianAI(creature);
+    }
 };
 
 /*####
@@ -202,7 +202,87 @@ class npc_prospector_remtravel : public CreatureScript
 public:
     npc_prospector_remtravel() : CreatureScript("npc_prospector_remtravel") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest)
+    struct npc_prospector_remtravelAI : public npc_escortAI
+    {
+        npc_prospector_remtravelAI(Creature* creature) : npc_escortAI(creature) { }
+
+        void Reset() OVERRIDE { }
+
+        void EnterCombat(Unit* who) OVERRIDE
+        {
+            if (urand(0, 1))
+                Talk(SAY_REM_AGGRO, who);
+        }
+
+        void JustSummoned(Creature* /*pSummoned*/) OVERRIDE
+        {
+            //unsure if it should be any
+            //pSummoned->AI()->AttackStart(me);
+        }
+
+        void WaypointReached(uint32 waypointId) OVERRIDE
+        {
+            if (Player* player = GetPlayerForEscort())
+            {
+                switch (waypointId)
+                {
+                    case 0:
+                        Talk(SAY_REM_START, player);
+                        break;
+                    case 5:
+                        Talk(SAY_REM_RAMP1_1, player);
+                        break;
+                    case 6:
+                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -10.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        DoSpawnCreature(NPC_GRAVEL_BONE, -10.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        break;
+                    case 9:
+                        Talk(SAY_REM_RAMP1_2, player);
+                        break;
+                    case 14:
+                        //depend quest rewarded?
+                        Talk(SAY_REM_BOOK, player);
+                        break;
+                    case 15:
+                        Talk(SAY_REM_TENT1_1, player);
+                        break;
+                    case 16:
+                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -10.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        DoSpawnCreature(NPC_GRAVEL_BONE, -10.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        break;
+                    case 17:
+                        Talk(SAY_REM_TENT1_2, player);
+                        break;
+                    case 26:
+                        Talk(SAY_REM_MOSS, player);
+                        break;
+                    case 27:
+                        Talk(EMOTE_REM_MOSS, player);
+                        break;
+                    case 28:
+                        Talk(SAY_REM_MOSS_PROGRESS, player);
+                        break;
+                    case 29:
+                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -15.0f, 3.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        DoSpawnCreature(NPC_GRAVEL_BONE, -15.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        DoSpawnCreature(NPC_GRAVEL_GEO, -15.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
+                        break;
+                    case 31:
+                        Talk(SAY_REM_PROGRESS, player);
+                        break;
+                    case 41:
+                        Talk(SAY_REM_REMEMBER, player);
+                        break;
+                    case 42:
+                        Talk(EMOTE_REM_END, player);
+                        player->GroupEventHappens(QUEST_ABSENT_MINDED_PT2, me);
+                        break;
+                }
+            }
+        }
+    };
+
+    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest) OVERRIDE
     {
         if (quest->GetQuestId() == QUEST_ABSENT_MINDED_PT2)
         {
@@ -215,91 +295,10 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new npc_prospector_remtravelAI(creature);
     }
-
-    struct npc_prospector_remtravelAI : public npc_escortAI
-    {
-        npc_prospector_remtravelAI(Creature* creature) : npc_escortAI(creature) {}
-
-        void WaypointReached(uint32 waypointId)
-        {
-            if (Player* player = GetPlayerForEscort())
-            {
-                switch (waypointId)
-                {
-                    case 0:
-                        Talk(SAY_REM_START, player->GetGUID());
-                        break;
-                    case 5:
-                        Talk(SAY_REM_RAMP1_1, player->GetGUID());
-                        break;
-                    case 6:
-                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -10.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        DoSpawnCreature(NPC_GRAVEL_BONE, -10.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        break;
-                    case 9:
-                        Talk(SAY_REM_RAMP1_2, player->GetGUID());
-                        break;
-                    case 14:
-                        //depend quest rewarded?
-                        Talk(SAY_REM_BOOK, player->GetGUID());
-                        break;
-                    case 15:
-                        Talk(SAY_REM_TENT1_1, player->GetGUID());
-                        break;
-                    case 16:
-                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -10.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        DoSpawnCreature(NPC_GRAVEL_BONE, -10.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        break;
-                    case 17:
-                        Talk(SAY_REM_TENT1_2, player->GetGUID());
-                        break;
-                    case 26:
-                        Talk(SAY_REM_MOSS, player->GetGUID());
-                        break;
-                    case 27:
-                        Talk(EMOTE_REM_MOSS, player->GetGUID());
-                        break;
-                    case 28:
-                        Talk(SAY_REM_MOSS_PROGRESS, player->GetGUID());
-                        break;
-                    case 29:
-                        DoSpawnCreature(NPC_GRAVEL_SCOUT, -15.0f, 3.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        DoSpawnCreature(NPC_GRAVEL_BONE, -15.0f, 5.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        DoSpawnCreature(NPC_GRAVEL_GEO, -15.0f, 7.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 30000);
-                        break;
-                    case 31:
-                        Talk(SAY_REM_PROGRESS, player->GetGUID());
-                        break;
-                    case 41:
-                        Talk(SAY_REM_REMEMBER, player->GetGUID());
-                        break;
-                    case 42:
-                        Talk(EMOTE_REM_END, player->GetGUID());
-                        player->GroupEventHappens(QUEST_ABSENT_MINDED_PT2, me);
-                        break;
-                }
-            }
-        }
-
-        void Reset() {}
-
-        void EnterCombat(Unit* who)
-        {
-            if (urand(0, 1))
-                Talk(SAY_REM_AGGRO, who->GetGUID());
-        }
-
-        void JustSummoned(Creature* /*pSummoned*/)
-        {
-            //unsure if it should be any
-            //pSummoned->AI()->AttackStart(me);
-        }
-    };
-
 };
 
 /*####
@@ -322,52 +321,22 @@ class npc_threshwackonator : public CreatureScript
 public:
     npc_threshwackonator() : CreatureScript("npc_threshwackonator") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
-    {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_INFO_DEF+1)
-        {
-            player->CLOSE_GOSSIP_MENU();
-
-            if (npc_threshwackonatorAI* pThreshAI = CAST_AI(npc_threshwackonator::npc_threshwackonatorAI, creature->AI()))
-            {
-                creature->AI()->Talk(EMOTE_START);
-                pThreshAI->StartFollow(player);
-            }
-        }
-
-        return true;
-    }
-
-    bool OnGossipHello(Player* player, Creature* creature)
-    {
-        if (player->GetQuestStatus(QUEST_GYROMAST_REV) == QUEST_STATUS_INCOMPLETE)
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_INSERT_KEY, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-        return true;
-    }
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_threshwackonatorAI(creature);
-    }
-
     struct npc_threshwackonatorAI : public FollowerAI
     {
         npc_threshwackonatorAI(Creature* creature) : FollowerAI(creature) { }
 
-        void Reset() { }
+        void Reset() OVERRIDE { }
 
-        void MoveInLineOfSight(Unit* who)
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+
         {
             FollowerAI::MoveInLineOfSight(who);
 
-            if (!me->getVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_GELKAK)
+            if (!me->GetVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_GELKAK)
             {
                 if (me->IsWithinDistInMap(who, 10.0f))
                 {
-                    Talk(SAY_AT_CLOSE, who->GetGUID());
+                    Talk(SAY_AT_CLOSE, who);
                     DoAtEnd();
                 }
             }
@@ -384,6 +353,36 @@ public:
         }
     };
 
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
+    {
+        player->PlayerTalkClass->ClearMenus();
+        if (action == GOSSIP_ACTION_INFO_DEF+1)
+        {
+            player->CLOSE_GOSSIP_MENU();
+
+            if (npc_threshwackonatorAI* pThreshAI = CAST_AI(npc_threshwackonator::npc_threshwackonatorAI, creature->AI()))
+            {
+                creature->AI()->Talk(EMOTE_START);
+                pThreshAI->StartFollow(player);
+            }
+        }
+
+        return true;
+    }
+
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    {
+        if (player->GetQuestStatus(QUEST_GYROMAST_REV) == QUEST_STATUS_INCOMPLETE)
+            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_INSERT_KEY, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+
+        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+        return true;
+    }
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_threshwackonatorAI(creature);
+    }
 };
 
 void AddSC_darkshore()

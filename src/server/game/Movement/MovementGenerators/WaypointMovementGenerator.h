@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ template<class T, class P>
 class PathMovementBase
 {
     public:
-        PathMovementBase() : i_path(NULL), i_currentNode(0) {}
-        virtual ~PathMovementBase() {};
+        PathMovementBase() : i_path(NULL), i_currentNode(0) { }
+        virtual ~PathMovementBase() { };
 
         // template pattern, not defined .. override required
         void LoadPath(T &);
@@ -63,7 +63,7 @@ class WaypointMovementGenerator<Creature> : public MovementGeneratorMedium< Crea
 {
     public:
         WaypointMovementGenerator(uint32 _path_id = 0, bool _repeating = true)
-            : i_nextMoveTime(0), m_isArrivalDone(false), path_id(_path_id), repeating(_repeating)  {}
+            : i_nextMoveTime(0), m_isArrivalDone(false), path_id(_path_id), repeating(_repeating)  { }
         ~WaypointMovementGenerator() { i_path = NULL; }
         void DoInitialize(Creature*);
         void DoFinalize(Creature*);
@@ -117,6 +117,10 @@ class FlightPathMovementGenerator : public MovementGeneratorMedium< Player, Flig
         {
             i_path = &pathnodes;
             i_currentNode = startNode;
+            _endGridX = 0.0f;
+            _endGridY = 0.0f;
+            _endMapId = 0;
+            _preloadTargetNode = 0;
         }
         void DoInitialize(Player*);
         void DoReset(Player*);

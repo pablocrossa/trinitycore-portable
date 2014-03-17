@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class npc_calvin_montague : public CreatureScript
 public:
     npc_calvin_montague() : CreatureScript("npc_calvin_montague") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest)
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) OVERRIDE
     {
         if (quest->GetQuestId() == QUEST_590)
         {
@@ -61,9 +61,9 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_calvin_montagueAI (creature);
+        return new npc_calvin_montagueAI(creature);
     }
 
     struct npc_calvin_montagueAI : public ScriptedAI
@@ -74,7 +74,7 @@ public:
         uint32 m_uiPhaseTimer;
         uint64 m_uiPlayerGUID;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             m_uiPhase = 0;
             m_uiPhaseTimer = 5000;
@@ -86,17 +86,17 @@ public:
                 me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
         }
 
-        void EnterCombat(Unit* /*who*/) {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void AttackedBy(Unit* pAttacker)
+        void AttackedBy(Unit* pAttacker) OVERRIDE
         {
-            if (me->getVictim() || me->IsFriendlyTo(pAttacker))
+            if (me->GetVictim() || me->IsFriendlyTo(pAttacker))
                 return;
 
             AttackStart(pAttacker);
         }
 
-        void DamageTaken(Unit* pDoneBy, uint32 &uiDamage)
+        void DamageTaken(Unit* pDoneBy, uint32 &uiDamage) OVERRIDE
         {
             if (uiDamage > me->GetHealth() || me->HealthBelowPctDamaged(15, uiDamage))
             {
@@ -113,7 +113,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (m_uiPhase)
             {
@@ -132,7 +132,7 @@ public:
                         ++m_uiPhase;
                         break;
                     case 2:
-                        if (Player* player = Unit::GetPlayer(*me, m_uiPlayerGUID))
+                        if (Player* player = ObjectAccessor::GetPlayer(*me, m_uiPlayerGUID))
                             player->AreaExploredOrEventHappens(QUEST_590);
 
                         DoCast(me, SPELL_DRINK, true);
@@ -159,7 +159,7 @@ public:
 ## go_mausoleum_trigger
 ######*/
 
-enum eMausoleum
+enum Mausoleum
 {
     QUEST_ULAG      = 1819,
     NPC_ULAG        = 6390,
@@ -172,7 +172,7 @@ class go_mausoleum_door : public GameObjectScript
 public:
     go_mausoleum_door() : GameObjectScript("go_mausoleum_door") { }
 
-    bool OnGossipHello(Player* player, GameObject* /*go*/)
+    bool OnGossipHello(Player* player, GameObject* /*go*/) OVERRIDE
     {
         if (player->GetQuestStatus(QUEST_ULAG) != QUEST_STATUS_INCOMPLETE)
             return false;
@@ -193,7 +193,7 @@ class go_mausoleum_trigger : public GameObjectScript
 public:
     go_mausoleum_trigger() : GameObjectScript("go_mausoleum_trigger") { }
 
-    bool OnGossipHello(Player* player, GameObject* go)
+    bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
     {
         if (player->GetQuestStatus(QUEST_ULAG) != QUEST_STATUS_INCOMPLETE)
             return false;

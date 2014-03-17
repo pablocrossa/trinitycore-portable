@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -41,15 +41,30 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recvData)
     }
 
     GMTicketResponse response = GMTICKET_RESPONSE_CREATE_ERROR;
-    // Player must not have ticket
-    if (!sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID()))
-    {
-        GmTicket* ticket = new GmTicket(GetPlayer(), recvData);
+    GmTicket* ticket = sTicketMgr->GetTicketByPlayer(GetPlayer()->GetGUID());
 
+    if (ticket && ticket->IsCompleted())
+        sTicketMgr->CloseTicket(ticket->GetId(), GetPlayer()->GetGUID());;
+
+    // Player must not have ticket
+    if (!ticket || ticket->IsClosed())
+    {
+        uint32 mapId;
+        float x, y, z;
+        std::string message;
+        uint32 needResponse;
+        bool needMoreHelp;
         uint32 count;
         std::list<uint32> times;
         uint32 decompressedSize;
         std::string chatLog;
+
+        recvData >> mapId;
+        recvData >> x >> y >> z;
+        recvData >> message;
+
+        recvData >> needResponse;
+        recvData >> needMoreHelp;
 
         recvData >> count;
 
@@ -72,17 +87,24 @@ void WorldSession::HandleGMTicketCreateOpcode(WorldPacket& recvData)
             if (uncompress(dest.contents(), &realSize, recvData.contents() + pos, recvData.size() - pos) == Z_OK)
             {
                 dest >> chatLog;
-                ticket->SetChatLog(times, chatLog);
             }
             else
             {
-                sLog->outError(LOG_FILTER_NETWORKIO, "CMSG_GMTICKET_CREATE possibly corrupt. Uncompression failed.");
+                TC_LOG_ERROR("network", "CMSG_GMTICKET_CREATE possibly corrupt. Uncompression failed.");
                 recvData.rfinish();
                 return;
             }
 
             recvData.rfinish(); // Will still have compressed data in buffer.
         }
+
+        ticket = new GmTicket(GetPlayer());
+        ticket->SetPosition(mapId, x, y, z);
+        ticket->SetMessage(message);
+        ticket->SetGmAction(needResponse, needMoreHelp);
+
+        if (!chatLog.empty())
+            ticket->SetChatLog(times, chatLog);
 
         sTicketMgr->AddTicket(ticket);
         sTicketMgr->UpdateLastChange();

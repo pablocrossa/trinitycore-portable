@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -48,9 +48,14 @@ endif()
 include(CheckPlatform)
 
 # basic packagesearching and setup (further support will be needed, this is a preliminary release!)
+set(OPENSSL_EXPECTED_VERSION 1.0.0)
+set(ACE_EXPECTED_VERSION 5.8.3)
+
 find_package(PCHSupport)
 find_package(ACE REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(Threads REQUIRED)
+
 if( NOT USE_MYSQL_SOURCES )
   find_package(MySQL REQUIRED)
 endif()

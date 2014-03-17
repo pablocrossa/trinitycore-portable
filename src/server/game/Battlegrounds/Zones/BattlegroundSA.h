@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -543,7 +543,7 @@ class BattlegroundSA : public Battleground
         bool gateDestroyed;
 
         // Achievement: Not Even a Scratch
-        bool notEvenAScratch(uint32 team) const { return _notEvenAScratch[GetTeamIndexByTeamId(team)]; }
+        bool CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* source, Unit const* target = NULL, uint32 miscvalue1 = 0);
 
         /// Id of attacker team
         TeamId Attackers;
@@ -627,6 +627,6 @@ class BattlegroundSA : public Battleground
         std::map<uint32/*id*/, uint32/*timer*/> DemoliserRespawnList;
 
         // Achievement: Not Even a Scratch
-        bool _notEvenAScratch[BG_TEAMS_COUNT];
+        bool _allVehiclesAlive[BG_TEAMS_COUNT];
 };
 #endif

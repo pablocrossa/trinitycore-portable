@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -50,19 +50,19 @@ class boss_instructor_malicia : public CreatureScript
 
         struct boss_instructormaliciaAI : public BossAI
         {
-            boss_instructormaliciaAI(Creature* creature) : BossAI(creature, DATA_INSTRUCTORMALICIA) {}
+            boss_instructormaliciaAI(Creature* creature) : BossAI(creature, DATA_INSTRUCTORMALICIA) { }
 
             uint32 FlashCounter;
             uint32 TouchCounter;
 
-            void Reset()
+            void Reset() OVERRIDE
             {
                 _Reset();
                 FlashCounter = 0;
                 TouchCounter = 0;
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
                 _EnterCombat();
                 events.ScheduleEvent(EVENT_CALLOFGRAVES, 4000);
@@ -72,7 +72,7 @@ class boss_instructor_malicia : public CreatureScript
                 events.ScheduleEvent(EVENT_HEALINGTOUCH, 45000);
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -99,7 +99,7 @@ class boss_instructor_malicia : public CreatureScript
                             events.ScheduleEvent(EVENT_RENEW, 10000);
                             break;
                         case EVENT_FLASHHEAL:
-                            //5 Flashheals will be casted
+                            //5 Flashheals will be cast
                             DoCast(me, SPELL_FLASHHEAL);
                             if (FlashCounter < 2)
                             {
@@ -113,7 +113,7 @@ class boss_instructor_malicia : public CreatureScript
                             }
                             break;
                         case EVENT_HEALINGTOUCH:
-                            //3 Healing Touch will be casted
+                            //3 Healing Touch will be cast
                             DoCast(me, SPELL_HEALINGTOUCH);
                             if (TouchCounter < 2)
                             {
@@ -135,9 +135,9 @@ class boss_instructor_malicia : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return new boss_instructormaliciaAI (creature);
+            return new boss_instructormaliciaAI(creature);
         }
 
 };

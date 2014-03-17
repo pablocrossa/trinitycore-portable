@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -29,16 +29,14 @@ set(authserver_SRCS
 )
 
 if( WIN32 )
+  set(authserver_SRCS
+    ${authserver_SRCS}
+    ${sources_windows_Debugging}
+  )
   if ( MSVC )
     set(authserver_SRCS
       ${authserver_SRCS}
-      ${sources_Debugging}
-    authserver.rc
-    )
-  else ( )
-    set(authserver_SRCS
-      ${authserver_SRCS}
-      ${sources_Debugging}
+      authserver.rc
     )
   endif ()
 endif()
@@ -80,6 +78,8 @@ target_link_libraries(authserver
   shared
   ${MYSQL_LIBRARY}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${ACE_LIBRARY}
 )
 
 if( WIN32 )
@@ -98,7 +98,7 @@ endif()
 
 if( UNIX )
   install(TARGETS authserver DESTINATION bin)
-  install(FILES  authserver.conf.dist DESTINATION etc)
+  install(FILES  authserver.conf.dist DESTINATION ${CONF_DIR})
 elseif( WIN32 )
   install(TARGETS authserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
   install(FILES authserver.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")

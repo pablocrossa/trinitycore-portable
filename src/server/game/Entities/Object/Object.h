@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ enum TypeMask
     TYPEMASK_GAMEOBJECT     = 0x0020,
     TYPEMASK_DYNAMICOBJECT  = 0x0040,
     TYPEMASK_CORPSE         = 0x0080,
-    TYPEMASK_SEER           = TYPEMASK_UNIT | TYPEMASK_DYNAMICOBJECT
+    TYPEMASK_SEER           = TYPEMASK_PLAYER | TYPEMASK_UNIT | TYPEMASK_DYNAMICOBJECT
 };
 
 enum TypeID
@@ -134,7 +134,8 @@ class Object
         uint32 GetEntry() const { return GetUInt32Value(OBJECT_FIELD_ENTRY); }
         void SetEntry(uint32 entry) { SetUInt32Value(OBJECT_FIELD_ENTRY, entry); }
 
-        void SetObjectScale(float scale) { SetFloatValue(OBJECT_FIELD_SCALE_X, scale); }
+        float GetObjectScale() const { return GetFloatValue(OBJECT_FIELD_SCALE_X); }
+        virtual void SetObjectScale(float scale) { SetFloatValue(OBJECT_FIELD_SCALE_X, scale); }
 
         TypeID GetTypeId() const { return m_objectTypeId; }
         bool isType(uint16 mask) const { return (mask & m_objectType); }
@@ -199,7 +200,7 @@ class Object
 
         virtual bool hasQuest(uint32 /* quest_id */) const { return false; }
         virtual bool hasInvolvedQuest(uint32 /* quest_id */) const { return false; }
-        virtual void BuildUpdate(UpdateDataMapType&) {}
+        virtual void BuildUpdate(UpdateDataMapType&) { }
         void BuildFieldsUpdate(Player*, UpdateDataMapType &) const;
 
         void SetFieldNotifyFlag(uint16 flag) { _fieldNotifyFlags |= flag; }
@@ -236,10 +237,8 @@ class Object
 
         uint32 GetUpdateFieldData(Player const* target, uint32*& flags) const;
 
-        void _SetUpdateBits(UpdateMask* updateMask, Player* target) const;
-        void _SetCreateBits(UpdateMask* updateMask, Player* target) const;
-        void _BuildMovementUpdate(ByteBuffer * data, uint16 flags) const;
-        void _BuildValuesUpdate(uint8 updatetype, ByteBuffer *data, UpdateMask* updateMask, Player* target) const;
+        void BuildMovementUpdate(ByteBuffer* data, uint16 flags) const;
+        virtual void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
 
         uint16 m_objectType;
 
@@ -276,13 +275,13 @@ struct Position
 {
     struct PositionXYZStreamer
     {
-        explicit PositionXYZStreamer(Position& pos) : m_pos(&pos) {}
+        explicit PositionXYZStreamer(Position& pos) : m_pos(&pos) { }
         Position* m_pos;
     };
 
     struct PositionXYZOStreamer
     {
-        explicit PositionXYZOStreamer(Position& pos) : m_pos(&pos) {}
+        explicit PositionXYZOStreamer(Position& pos) : m_pos(&pos) { }
         Position* m_pos;
     };
 
@@ -409,26 +408,54 @@ struct MovementInfo
     uint16 flags2;
     Position pos;
     uint32 time;
+
     // transport
-    uint64 t_guid;
-    Position t_pos;
-    int8 t_seat;
-    uint32 t_time;
-    uint32 t_time2;
+    struct TransportInfo
+    {
+        void Reset()
+        {
+            guid = 0;
+            pos.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+            seat = -1;
+            time = 0;
+            time2 = 0;
+        }
+
+        uint64 guid;
+        Position pos;
+        int8 seat;
+        uint32 time;
+        uint32 time2;
+    } transport;
+
     // swimming/flying
     float pitch;
+
     // falling
     uint32 fallTime;
-    // jumping
-    float j_zspeed, j_sinAngle, j_cosAngle, j_xyspeed;
+
+        // jumping
+    struct JumpInfo
+    {
+        void Reset()
+        {
+            zspeed = sinAngle = cosAngle = xyspeed = 0.0f;
+        }
+
+        float zspeed, sinAngle, cosAngle, xyspeed;
+
+    } jump;
+
     // spline
     float splineElevation;
 
     MovementInfo() :
-        guid(), flags(), flags2(), pos(), time(), t_guid(), t_pos(),
-        t_seat(-1), t_time(), t_time2(), pitch(), fallTime(),
-        j_zspeed(), j_sinAngle(), j_cosAngle(), j_xyspeed()
-    { }
+        guid(0), flags(0), flags2(0), time(0), pitch(0.0f), fallTime(0), splineElevation(0.0f)
+    {
+        pos.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+        transport.Reset();
+        jump.Reset();
+    }
 
     uint32 GetMovementFlags() const { return flags; }
     void SetMovementFlags(uint32 flag) { flags = flag; }
@@ -494,6 +521,38 @@ class FlaggedValuesArray32
     private:
         T_VALUES m_values[ARRAY_SIZE];
         T_FLAGS m_flags;
+};
+
+enum MapObjectCellMoveState
+{
+    MAP_OBJECT_CELL_MOVE_NONE, //not in move list
+    MAP_OBJECT_CELL_MOVE_ACTIVE, //in move list
+    MAP_OBJECT_CELL_MOVE_INACTIVE, //in move list but should not move
+};
+
+class MapObject
+{
+        friend class Map; //map for moving creatures
+        friend class ObjectGridLoader; //grid loader for loading creatures
+
+    protected:
+        MapObject() : _moveState(MAP_OBJECT_CELL_MOVE_NONE)
+        {
+            _newPosition.Relocate(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+
+    private:
+        Cell _currentCell;
+        Cell const& GetCurrentCell() const { return _currentCell; }
+        void SetCurrentCell(Cell const& cell) { _currentCell = cell; }
+
+        MapObjectCellMoveState _moveState;
+        Position _newPosition;
+        void SetNewCellPosition(float x, float y, float z, float o)
+        {
+            _moveState = MAP_OBJECT_CELL_MOVE_ACTIVE;
+            _newPosition.Relocate(x, y, z, o);
+        }
 };
 
 class WorldObject : public Object, public WorldLocation
@@ -578,29 +637,27 @@ class WorldObject : public Object, public WorldLocation
 
         virtual uint8 getLevelForTarget(WorldObject const* /*target*/) const { return 1; }
 
-        void MonsterSay(const char* text, uint32 language, uint64 TargetGuid);
-        void MonsterYell(const char* text, uint32 language, uint64 TargetGuid);
-        void MonsterTextEmote(const char* text, uint64 TargetGuid, bool IsBossEmote = false);
-        void MonsterWhisper(const char* text, uint64 receiver, bool IsBossWhisper = false);
-        void MonsterSay(int32 textId, uint32 language, uint64 TargetGuid);
-        void MonsterYell(int32 textId, uint32 language, uint64 TargetGuid);
-        void MonsterTextEmote(int32 textId, uint64 TargetGuid, bool IsBossEmote = false);
-        void MonsterWhisper(int32 textId, uint64 receiver, bool IsBossWhisper = false);
-        void MonsterYellToZone(int32 textId, uint32 language, uint64 TargetGuid);
-        void BuildMonsterChat(WorldPacket* data, uint8 msgtype, char const* text, uint32 language, std::string const& name, uint64 TargetGuid) const;
+        void MonsterSay(const char* text, uint32 language, WorldObject const* target);
+        void MonsterYell(const char* text, uint32 language, WorldObject const* target);
+        void MonsterTextEmote(const char* text, WorldObject const* target, bool IsBossEmote = false);
+        void MonsterWhisper(const char* text, Player const* target, bool IsBossWhisper = false);
+        void MonsterSay(int32 textId, uint32 language, WorldObject const* target);
+        void MonsterYell(int32 textId, uint32 language, WorldObject const* target);
+        void MonsterTextEmote(int32 textId, WorldObject const* target, bool IsBossEmote = false);
+        void MonsterWhisper(int32 textId, Player const* target, bool IsBossWhisper = false);
 
         void PlayDistanceSound(uint32 sound_id, Player* target = NULL);
         void PlayDirectSound(uint32 sound_id, Player* target = NULL);
 
         void SendObjectDeSpawnAnim(uint64 guid);
 
-        virtual void SaveRespawnTime() {}
+        virtual void SaveRespawnTime() { }
         void AddObjectToRemoveList();
 
         float GetGridActivationRange() const;
         float GetVisibilityRange() const;
         float GetSightRange(WorldObject const* target = NULL) const;
-        bool canSeeOrDetect(WorldObject const* obj, bool ignoreStealth = false, bool distanceCheck = false) const;
+        bool CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth = false, bool distanceCheck = false) const;
 
         FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealth;
         FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealthDetect;
@@ -673,16 +730,22 @@ class WorldObject : public Object, public WorldLocation
 
         // Transports
         Transport* GetTransport() const { return m_transport; }
-        virtual float GetTransOffsetX() const { return 0; }
-        virtual float GetTransOffsetY() const { return 0; }
-        virtual float GetTransOffsetZ() const { return 0; }
-        virtual float GetTransOffsetO() const { return 0; }
-        virtual uint32 GetTransTime()   const { return 0; }
-        virtual int8 GetTransSeat()     const { return -1; }
+        float GetTransOffsetX() const { return m_movementInfo.transport.pos.GetPositionX(); }
+        float GetTransOffsetY() const { return m_movementInfo.transport.pos.GetPositionY(); }
+        float GetTransOffsetZ() const { return m_movementInfo.transport.pos.GetPositionZ(); }
+        float GetTransOffsetO() const { return m_movementInfo.transport.pos.GetOrientation(); }
+        uint32 GetTransTime()   const { return m_movementInfo.transport.time; }
+        int8 GetTransSeat()     const { return m_movementInfo.transport.seat; }
         virtual uint64 GetTransGUID()   const;
         void SetTransport(Transport* t) { m_transport = t; }
 
         MovementInfo m_movementInfo;
+
+        virtual float GetStationaryX() const { return GetPositionX(); }
+        virtual float GetStationaryY() const { return GetPositionY(); }
+        virtual float GetStationaryZ() const { return GetPositionZ(); }
+        virtual float GetStationaryO() const { return GetOrientation(); }
+
     protected:
         std::string m_name;
         bool m_isActive;
@@ -712,7 +775,6 @@ class WorldObject : public Object, public WorldLocation
 
         uint16 m_notifyflags;
         uint16 m_executed_notifies;
-
         virtual bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const;
 
         bool CanNeverSee(WorldObject const* obj) const;
@@ -728,7 +790,7 @@ namespace Trinity
     class ObjectDistanceOrderPred
     {
         public:
-            ObjectDistanceOrderPred(WorldObject const* pRefObj, bool ascending = true) : m_refObj(pRefObj), m_ascending(ascending) {}
+            ObjectDistanceOrderPred(WorldObject const* pRefObj, bool ascending = true) : m_refObj(pRefObj), m_ascending(ascending) { }
             bool operator()(WorldObject const* pLeft, WorldObject const* pRight) const
             {
                 return m_ascending ? m_refObj->GetDistanceOrder(pLeft, pRight) : !m_refObj->GetDistanceOrder(pLeft, pRight);

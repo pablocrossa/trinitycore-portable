@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@
 #include "ScriptedCreature.h"
 #include "gundrak.h"
 
-enum eSpells
+enum Spells
 {
     SPELL_DETERMINED_STAB                         = 55104,
     SPELL_GROUND_TREMOR                           = 55142,
@@ -32,7 +32,7 @@ enum eSpells
     SPELL_TRANSFORMATION                          = 55098, //Periodic, The caster transforms into a powerful mammoth, increasing Physical damage done by 25% and granting immunity to Stun effects.
 };
 
-enum eSays
+enum Says
 {
     SAY_AGGRO                                     = 0,
     SAY_SLAY                                      = 1,
@@ -42,16 +42,19 @@ enum eSays
     EMOTE_TRANSFORM                               = 5
 };
 
-#define DATA_LESS_RABI                            1
+enum Misc
+{
+    DATA_LESS_RABI                                = 1
+};
 
 class boss_moorabi : public CreatureScript
 {
 public:
     boss_moorabi() : CreatureScript("boss_moorabi") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_moorabiAI(creature);
+        return GetInstanceAI<boss_moorabiAI>(creature);
     }
 
     struct boss_moorabiAI : public ScriptedAI
@@ -70,7 +73,7 @@ public:
         uint32 uiDeterminedStabTimer;
         uint32 uiTransformationTImer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             uiGroundTremorTimer = 18*IN_MILLISECONDS;
             uiNumblingShoutTimer =  10*IN_MILLISECONDS;
@@ -78,20 +81,18 @@ public:
             uiTransformationTImer = 12*IN_MILLISECONDS;
             bPhase = false;
 
-            if (instance)
-                instance->SetData(DATA_MOORABI_EVENT, NOT_STARTED);
+            instance->SetData(DATA_MOORABI_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
             DoCast(me, SPELL_MOJO_FRENZY, true);
 
-            if (instance)
-                instance->SetData(DATA_MOORABI_EVENT, IN_PROGRESS);
+            instance->SetData(DATA_MOORABI_EVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 uiDiff)
+        void UpdateAI(uint32 uiDiff) OVERRIDE
         {
             //Return since we have no target
              if (!UpdateVictim())
@@ -107,27 +108,27 @@ public:
             {
                 Talk(SAY_QUAKE);
                 if (bPhase)
-                    DoCast(me->getVictim(), SPELL_QUAKE, true);
+                    DoCastVictim(SPELL_QUAKE, true);
                 else
-                    DoCast(me->getVictim(), SPELL_GROUND_TREMOR, true);
+                    DoCastVictim(SPELL_GROUND_TREMOR, true);
                 uiGroundTremorTimer = 10*IN_MILLISECONDS;
             } else uiGroundTremorTimer -= uiDiff;
 
             if (uiNumblingShoutTimer <= uiDiff)
             {
                 if (bPhase)
-                    DoCast(me->getVictim(), SPELL_NUMBING_ROAR, true);
+                    DoCastVictim(SPELL_NUMBING_ROAR, true);
                 else
-                    DoCast(me->getVictim(), SPELL_NUMBING_SHOUT, true);
+                    DoCastVictim(SPELL_NUMBING_SHOUT, true);
                 uiNumblingShoutTimer = 10*IN_MILLISECONDS;
             } else uiNumblingShoutTimer -=uiDiff;
 
             if (uiDeterminedStabTimer <= uiDiff)
             {
                 if (bPhase)
-                    DoCast(me->getVictim(), SPELL_DETERMINED_GORE);
+                    DoCastVictim(SPELL_DETERMINED_GORE);
                 else
-                    DoCast(me->getVictim(), SPELL_DETERMINED_STAB, true);
+                    DoCastVictim(SPELL_DETERMINED_STAB, true);
                 uiDeterminedStabTimer = 8*IN_MILLISECONDS;
             } else uiDeterminedStabTimer -=uiDiff;
 
@@ -142,7 +143,7 @@ public:
             DoMeleeAttackIfReady();
          }
 
-        uint32 GetData(uint32 type) const
+        uint32 GetData(uint32 type) const OVERRIDE
         {
             if (type == DATA_LESS_RABI)
                 return bPhase ? 0 : 1;
@@ -150,17 +151,16 @@ public:
             return 0;
         }
 
-         void JustDied(Unit* /*killer*/)
+         void JustDied(Unit* /*killer*/) OVERRIDE
          {
             Talk(SAY_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_MOORABI_EVENT, DONE);
+            instance->SetData(DATA_MOORABI_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
-            if (victim == me)
+            if (victim->GetTypeId() != TYPEID_PLAYER)
                 return;
 
             Talk(SAY_SLAY);
@@ -176,7 +176,7 @@ class achievement_less_rabi : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target)
+        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
         {
             if (!target)
                 return false;

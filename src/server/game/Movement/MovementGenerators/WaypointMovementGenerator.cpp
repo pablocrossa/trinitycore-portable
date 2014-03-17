@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
 //Extended headers
 #include "ObjectMgr.h"
 #include "World.h"
+#include "Transport.h"
 //Flightmaster grid preloading
 #include "MapManager.h"
 //Creature-specific headers
@@ -40,8 +41,8 @@ void WaypointMovementGenerator<Creature>::LoadPath(Creature* creature)
 
     if (!i_path)
     {
-        // No movement found for entry
-        sLog->outError(LOG_FILTER_SQL, "WaypointMovementGenerator::LoadPath: creature %s (Entry: %u GUID: %u) doesn't have waypoint path id: %u", creature->GetName().c_str(), creature->GetEntry(), creature->GetGUIDLow(), path_id);
+        // No path id found for entry
+        TC_LOG_ERROR("sql.sql", "WaypointMovementGenerator::LoadPath: creature %s (Entry: %u GUID: %u DB GUID: %u) doesn't have waypoint path id: %u", creature->GetName().c_str(), creature->GetEntry(), creature->GetGUIDLow(), creature->GetDBTableGUIDLow(), path_id);
         return;
     }
 
@@ -73,33 +74,61 @@ void WaypointMovementGenerator<Creature>::OnArrived(Creature* creature)
     if (m_isArrivalDone)
         return;
 
-    creature->ClearUnitState(UNIT_STATE_ROAMING_MOVE);
     m_isArrivalDone = true;
 
     if (i_path->at(i_currentNode)->event_id && urand(0, 99) < i_path->at(i_currentNode)->event_chance)
     {
-        sLog->outDebug(LOG_FILTER_MAPSCRIPTS, "Creature movement start script %u at point %u for "UI64FMTD".", i_path->at(i_currentNode)->event_id, i_currentNode, creature->GetGUID());
+        TC_LOG_DEBUG("maps.script", "Creature movement start script %u at point %u for " UI64FMTD ".", i_path->at(i_currentNode)->event_id, i_currentNode, creature->GetGUID());
+        creature->ClearUnitState(UNIT_STATE_ROAMING_MOVE);
         creature->GetMap()->ScriptsStart(sWaypointScripts, i_path->at(i_currentNode)->event_id, creature, NULL);
     }
 
     // Inform script
     MovementInform(creature);
     creature->UpdateWaypointID(i_currentNode);
-    Stop(i_path->at(i_currentNode)->delay);
+
+    if (i_path->at(i_currentNode)->delay)
+    {
+        creature->ClearUnitState(UNIT_STATE_ROAMING_MOVE);
+        Stop(i_path->at(i_currentNode)->delay);
+    }
 }
 
 bool WaypointMovementGenerator<Creature>::StartMove(Creature* creature)
 {
     if (!i_path || i_path->empty())
         return false;
+
     if (Stopped())
         return true;
+
+    bool transportPath = creature->HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && creature->GetTransGUID();
 
     if (m_isArrivalDone)
     {
         if ((i_currentNode == i_path->size() - 1) && !repeating) // If that's our last waypoint
         {
-            creature->SetHomePosition(i_path->at(i_currentNode)->x, i_path->at(i_currentNode)->y, i_path->at(i_currentNode)->z, creature->GetOrientation());
+            float x = i_path->at(i_currentNode)->x;
+            float y = i_path->at(i_currentNode)->y;
+            float z = i_path->at(i_currentNode)->z;
+            float o = creature->GetOrientation();
+
+            if (!transportPath)
+                creature->SetHomePosition(x, y, z, o);
+            else
+            {
+                if (Transport* trans = creature->GetTransport())
+                {
+                    o -= trans->GetOrientation();
+                    creature->SetTransportHomePosition(x, y, z, o);
+                    trans->CalculatePassengerPosition(x, y, z, &o);
+                    creature->SetHomePosition(x, y, z, o);
+                }
+                else
+                    transportPath = false;
+                // else if (vehicle) - this should never happen, vehicle offsets are const
+            }
+
             creature->GetMotionMaster()->Initialize();
             return false;
         }
@@ -113,7 +142,19 @@ bool WaypointMovementGenerator<Creature>::StartMove(Creature* creature)
 
     creature->AddUnitState(UNIT_STATE_ROAMING_MOVE);
 
+    Movement::Location formationDest(node->x, node->y, node->z, 0.0f);
     Movement::MoveSplineInit init(creature);
+
+    //! If creature is on transport, we assume waypoints set in DB are already transport offsets
+    if (transportPath)
+    {
+        init.DisableTransportPathTransformations();
+        if (TransportBase* trans = creature->GetDirectTransport())
+            trans->CalculatePassengerPosition(formationDest.x, formationDest.y, formationDest.z, &formationDest.orientation);
+    }
+
+    //! Do not use formationDest here, MoveTo requires transport offsets due to DisableTransportPathTransformations() call
+    //! but formationDest contains global coordinates
     init.MoveTo(node->x, node->y, node->z);
 
     //! Accepts angles such as 0.00001 and -0.00001, 0 must be ignored, default value in waypoint table
@@ -125,7 +166,7 @@ bool WaypointMovementGenerator<Creature>::StartMove(Creature* creature)
 
     //Call for creature group update
     if (creature->GetFormation() && creature->GetFormation()->getLeader() == creature)
-        creature->GetFormation()->LeaderMoveTo(node->x, node->y, node->z);
+        creature->GetFormation()->LeaderMoveTo(formationDest.x, formationDest.y, formationDest.z);
 
     return true;
 }
@@ -218,6 +259,8 @@ void FlightPathMovementGenerator::DoFinalize(Player* player)
         // when client side flight end early in comparison server side
         player->StopMoving();
     }
+
+    player->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_TAXI_BENCHMARK);
 }
 
 #define PLAYER_FLIGHT_SPEED 32.0f
@@ -283,7 +326,7 @@ void FlightPathMovementGenerator::DoEventIfAny(Player* player, TaxiPathNodeEntry
 {
     if (uint32 eventid = departure ? node.departureEventID : node.arrivalEventID)
     {
-        sLog->outDebug(LOG_FILTER_MAPSCRIPTS, "Taxi %s event %u of node %u of path %u for player %s", departure ? "departure" : "arrival", eventid, node.index, node.path, player->GetName().c_str());
+        TC_LOG_DEBUG("maps.script", "Taxi %s event %u of node %u of path %u for player %s", departure ? "departure" : "arrival", eventid, node.index, node.path, player->GetName().c_str());
         player->GetMap()->ScriptsStart(sEventScripts, eventid, player, player);
     }
 }
@@ -314,9 +357,9 @@ void FlightPathMovementGenerator::PreloadEndGrid()
     // Load the grid
     if (endMap)
     {
-        sLog->outInfo(LOG_FILTER_GENERAL, "Preloading rid (%f, %f) for map %u at node index %u/%u", _endGridX, _endGridY, _endMapId, _preloadTargetNode, (uint32)(i_path->size()-1));
+        TC_LOG_INFO("misc", "Preloading rid (%f, %f) for map %u at node index %u/%u", _endGridX, _endGridY, _endMapId, _preloadTargetNode, (uint32)(i_path->size()-1));
         endMap->LoadGrid(_endGridX, _endGridY);
     }
     else
-        sLog->outInfo(LOG_FILTER_GENERAL, "Unable to determine map to preload flightmaster grid");
+        TC_LOG_INFO("misc", "Unable to determine map to preload flightmaster grid");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -167,10 +167,9 @@ class boss_zuljin : public CreatureScript
 
             SummonList Summons;
 
-            void Reset()
+            void Reset() OVERRIDE
             {
-                if (instance)
-                    instance->SetData(DATA_ZULJINEVENT, NOT_STARTED);
+                instance->SetData(DATA_ZULJINEVENT, NOT_STARTED);
 
                 Phase = 0;
 
@@ -204,10 +203,9 @@ class boss_zuljin : public CreatureScript
                 //me->SetByteValue(UNIT_FIELD_BYTES_2, 0, SHEATH_STATE_MELEE);
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
-                if (instance)
-                    instance->SetData(DATA_ZULJINEVENT, IN_PROGRESS);
+                instance->SetData(DATA_ZULJINEVENT, IN_PROGRESS);
 
                 DoZoneInCombat();
 
@@ -216,7 +214,7 @@ class boss_zuljin : public CreatureScript
                 EnterPhase(0);
             }
 
-            void KilledUnit(Unit* /*victim*/)
+            void KilledUnit(Unit* /*victim*/) OVERRIDE
             {
                 if (Intro_Timer)
                     return;
@@ -224,10 +222,9 @@ class boss_zuljin : public CreatureScript
                 Talk(YELL_KILL);
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
-                if (instance)
-                    instance->SetData(DATA_ZULJINEVENT, DONE);
+                instance->SetData(DATA_ZULJINEVENT, DONE);
 
                 Talk(YELL_DEATH);
                 Summons.DespawnEntry(CREATURE_COLUMN_OF_FIRE);
@@ -236,7 +233,7 @@ class boss_zuljin : public CreatureScript
                     Temp->SetUInt32Value(UNIT_FIELD_BYTES_1, UNIT_STAND_STATE_DEAD);
             }
 
-            void AttackStart(Unit* who)
+            void AttackStart(Unit* who) OVERRIDE
             {
                 if (Phase == 2)
                     AttackStartNoMove(who);
@@ -246,20 +243,20 @@ class boss_zuljin : public CreatureScript
 
             void DoMeleeAttackIfReady()
             {
-                if (!me->IsNonMeleeSpellCasted(false))
+                if (!me->IsNonMeleeSpellCast(false))
                 {
-                    if (me->isAttackReady() && me->IsWithinMeleeRange(me->getVictim()))
+                    if (me->isAttackReady() && me->IsWithinMeleeRange(me->GetVictim()))
                     {
                         if (Phase == 1 && !Overpower_Timer)
                         {
-                            uint32 health = me->getVictim()->GetHealth();
-                            me->AttackerStateUpdate(me->getVictim());
-                            if (me->getVictim() && health == me->getVictim()->GetHealth())
+                            uint32 health = me->GetVictim()->GetHealth();
+                            me->AttackerStateUpdate(me->GetVictim());
+                            if (me->GetVictim() && health == me->GetVictim()->GetHealth())
                             {
-                                DoCast(me->getVictim(), SPELL_OVERPOWER, false);
+                                DoCastVictim(SPELL_OVERPOWER, false);
                                 Overpower_Timer = 5000;
                             }
-                        } else me->AttackerStateUpdate(me->getVictim());
+                        } else me->AttackerStateUpdate(me->GetVictim());
                         me->resetAttackTimer();
                     }
                 }
@@ -297,12 +294,12 @@ class boss_zuljin : public CreatureScript
                 }
             }
 
-            void JustSummoned(Creature* summon)
+            void JustSummoned(Creature* summon) OVERRIDE
             {
                 Summons.Summon(summon);
             }
 
-            void SummonedCreatureDespawn(Creature* summon)
+            void SummonedCreatureDespawn(Creature* summon) OVERRIDE
             {
                 Summons.Despawn(summon);
             }
@@ -349,12 +346,12 @@ class boss_zuljin : public CreatureScript
                         }
                     }
                     else
-                        me->AI()->AttackStart(me->getVictim());
+                        me->AI()->AttackStart(me->GetVictim());
                     if (NextPhase == 3)
                     {
                         me->RemoveAurasDueToSpell(SPELL_ENERGY_STORM);
                         Summons.DespawnEntry(CREATURE_FEATHER_VORTEX);
-                        me->GetMotionMaster()->MoveChase(me->getVictim());
+                        me->GetMotionMaster()->MoveChase(me->GetVictim());
                     }
                     break;
                 default:
@@ -363,7 +360,7 @@ class boss_zuljin : public CreatureScript
                 Phase = NextPhase;
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!TankGUID)
                 {
@@ -431,7 +428,7 @@ class boss_zuljin : public CreatureScript
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                             {
-                                TankGUID = me->getVictim()->GetGUID();
+                                TankGUID = me->GetVictim()->GetGUID();
                                 me->SetSpeed(MOVE_RUN, 5.0f);
                                 AttackStart(target); // change victim
                                 Claw_Rage_Timer = 0;
@@ -443,7 +440,7 @@ class boss_zuljin : public CreatureScript
                         {
                             if (Claw_Loop_Timer <= diff)
                             {
-                                Unit* target = me->getVictim();
+                                Unit* target = me->GetVictim();
                                 if (!target || !target->isTargetableForAttack()) target = Unit::GetUnit(*me, TankGUID);
                                 if (!target || !target->isTargetableForAttack()) target = SelectTarget(SELECT_TARGET_RANDOM, 0);
                                 if (target)
@@ -480,7 +477,7 @@ class boss_zuljin : public CreatureScript
                         {
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
                             {
-                                TankGUID = me->getVictim()->GetGUID();
+                                TankGUID = me->GetVictim()->GetGUID();
                                 me->SetSpeed(MOVE_RUN, 5.0f);
                                 AttackStart(target); // change victim
                                 Lynx_Rush_Timer = 0;
@@ -489,7 +486,7 @@ class boss_zuljin : public CreatureScript
                         }
                         else if (!Lynx_Rush_Timer)
                         {
-                            Unit* target = me->getVictim();
+                            Unit* target = me->GetVictim();
                             if (!target || !target->isTargetableForAttack())
                             {
                                 target = SelectTarget(SELECT_TARGET_RANDOM, 0);
@@ -553,52 +550,52 @@ class boss_zuljin : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return new boss_zuljinAI(creature);
+            return GetInstanceAI<boss_zuljinAI>(creature);
         }
 };
 
-class mob_zuljin_vortex : public CreatureScript
+class npc_zuljin_vortex : public CreatureScript
 {
     public:
 
-        mob_zuljin_vortex()
-            : CreatureScript("mob_zuljin_vortex")
+        npc_zuljin_vortex()
+            : CreatureScript("npc_zuljin_vortex")
         {
         }
 
-        struct mob_zuljin_vortexAI : public ScriptedAI
+        struct npc_zuljin_vortexAI : public ScriptedAI
         {
-            mob_zuljin_vortexAI(Creature* creature) : ScriptedAI(creature) {}
+            npc_zuljin_vortexAI(Creature* creature) : ScriptedAI(creature) { }
 
-            void Reset() {}
+            void Reset() OVERRIDE { }
 
-            void EnterCombat(Unit* /*target*/) {}
+            void EnterCombat(Unit* /*target*/) OVERRIDE { }
 
-            void SpellHit(Unit* caster, const SpellInfo* spell)
+            void SpellHit(Unit* caster, const SpellInfo* spell) OVERRIDE
             {
                 if (spell->Id == SPELL_ZAP_INFORM)
                     DoCast(caster, SPELL_ZAP_DAMAGE, true);
             }
 
-            void UpdateAI(uint32 /*diff*/)
+            void UpdateAI(uint32 /*diff*/) OVERRIDE
             {
                 //if the vortex reach the target, it change his target to another player
-                if (me->IsWithinMeleeRange(me->getVictim()))
+                if (me->IsWithinMeleeRange(me->GetVictim()))
                     AttackStart(SelectTarget(SELECT_TARGET_RANDOM, 0));
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return new mob_zuljin_vortexAI(creature);
+            return new npc_zuljin_vortexAI(creature);
         }
 };
 
 void AddSC_boss_zuljin()
 {
     new boss_zuljin();
-    new mob_zuljin_vortex();
+    new npc_zuljin_vortex();
 }
 

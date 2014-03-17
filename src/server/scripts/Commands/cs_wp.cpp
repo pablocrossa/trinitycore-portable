@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -34,23 +34,23 @@ class wp_commandscript : public CommandScript
 public:
     wp_commandscript() : CommandScript("wp_commandscript") { }
 
-    ChatCommand* GetCommands() const
+    ChatCommand* GetCommands() const OVERRIDE
     {
         static ChatCommand wpCommandTable[] =
         {
-            { "add",            SEC_GAMEMASTER,     false, &HandleWpAddCommand,                "", NULL },
-            { "event",          SEC_GAMEMASTER,     false, &HandleWpEventCommand,              "", NULL },
-            { "load",           SEC_GAMEMASTER,     false, &HandleWpLoadCommand,               "", NULL },
-            { "modify",         SEC_GAMEMASTER,     false, &HandleWpModifyCommand,             "", NULL },
-            { "unload",         SEC_GAMEMASTER,     false, &HandleWpUnLoadCommand,             "", NULL },
-            { "reload",         SEC_ADMINISTRATOR,  false, &HandleWpReloadCommand,             "", NULL },
-            { "show",           SEC_GAMEMASTER,     false, &HandleWpShowCommand,               "", NULL },
-            { NULL,             0,                  false, NULL,                               "", NULL }
+            { "add",    rbac::RBAC_PERM_COMMAND_WP_ADD,    false, &HandleWpAddCommand,    "", NULL },
+            { "event",  rbac::RBAC_PERM_COMMAND_WP_EVENT,  false, &HandleWpEventCommand,  "", NULL },
+            { "load",   rbac::RBAC_PERM_COMMAND_WP_LOAD,   false, &HandleWpLoadCommand,   "", NULL },
+            { "modify", rbac::RBAC_PERM_COMMAND_WP_MODIFY, false, &HandleWpModifyCommand, "", NULL },
+            { "unload", rbac::RBAC_PERM_COMMAND_WP_UNLOAD, false, &HandleWpUnLoadCommand, "", NULL },
+            { "reload", rbac::RBAC_PERM_COMMAND_WP_RELOAD, false, &HandleWpReloadCommand, "", NULL },
+            { "show",   rbac::RBAC_PERM_COMMAND_WP_SHOW,   false, &HandleWpShowCommand,   "", NULL },
+            { NULL,     0,                           false, NULL,                   "", NULL }
         };
         static ChatCommand commandTable[] =
         {
-            { "wp",             SEC_GAMEMASTER,     false, NULL,                     "", wpCommandTable },
-            { NULL,             0,                  false, NULL,                               "", NULL }
+            { "wp", rbac::RBAC_PERM_COMMAND_WP, false, NULL, "", wpCommandTable },
+            { NULL, 0,                    false, NULL, "", NULL }
         };
         return commandTable;
     }
@@ -214,7 +214,7 @@ public:
         target->LoadPath(pathid);
         target->SetDefaultMovementType(WAYPOINT_MOTION_TYPE);
         target->GetMotionMaster()->Initialize();
-        target->MonsterSay("Path loaded.", 0, 0);
+        target->MonsterSay("Path loaded.", LANG_UNIVERSAL, NULL);
 
         return true;
     }
@@ -270,7 +270,7 @@ public:
                 target->SetDefaultMovementType(IDLE_MOTION_TYPE);
                 target->GetMotionMaster()->MoveTargetedHome();
                 target->GetMotionMaster()->Initialize();
-                target->MonsterSay("Path unloaded.", 0, 0);
+                target->MonsterSay("Path unloaded.", LANG_UNIVERSAL, NULL);
                 return true;
             }
             handler->PSendSysMessage("%s%s|r", "|cffff33ff", "Target have no loaded path.");
@@ -689,7 +689,7 @@ public:
                         wpCreature->AddObjectToRemoveList();
                     }
                     // re-create
-                    Creature* wpCreature2 = new Creature;
+                    Creature* wpCreature2 = new Creature();
                     if (!wpCreature2->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_UNIT), map, chr->GetPhaseMaskForSpawn(), VISUAL_WAYPOINT, 0, 0, chr->GetPositionX(), chr->GetPositionY(), chr->GetPositionZ(), chr->GetOrientation()))
                     {
                         handler->PSendSysMessage(LANG_WAYPOINT_VP_NOTCREATED, VISUAL_WAYPOINT);
@@ -796,7 +796,7 @@ public:
         if (show == "info")
         {
             // Check if the user did specify a visual waypoint
-            if (target->GetEntry() != VISUAL_WAYPOINT)
+            if (!target || target->GetEntry() != VISUAL_WAYPOINT)
             {
                 handler->PSendSysMessage(LANG_WAYPOINT_VP_SELECT);
                 handler->SetSentErrorMessage(true);
@@ -913,7 +913,7 @@ public:
                 Map* map = chr->GetMap();
                 float o = chr->GetOrientation();
 
-                Creature* wpCreature = new Creature;
+                Creature* wpCreature = new Creature();
                 if (!wpCreature->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_UNIT), map, chr->GetPhaseMaskForSpawn(), id, 0, 0, x, y, z, o))
                 {
                     handler->PSendSysMessage(LANG_WAYPOINT_VP_NOTCREATED, id);
@@ -977,7 +977,7 @@ public:
             float o = chr->GetOrientation();
             Map* map = chr->GetMap();
 
-            Creature* creature = new Creature;
+            Creature* creature = new Creature();
             if (!creature->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_UNIT), map, chr->GetPhaseMaskForSpawn(), id, 0, 0, x, y, z, o))
             {
                 handler->PSendSysMessage(LANG_WAYPOINT_VP_NOTCREATED, id);
@@ -1026,7 +1026,7 @@ public:
             Player* chr = handler->GetSession()->GetPlayer();
             Map* map = chr->GetMap();
 
-            Creature* creature = new Creature;
+            Creature* creature = new Creature();
             if (!creature->Create(sObjectMgr->GenerateLowGuid(HIGHGUID_UNIT), map, chr->GetPhaseMaskForSpawn(), id, 0, 0, x, y, z, o))
             {
                 handler->PSendSysMessage(LANG_WAYPOINT_NOTCREATED, id);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -49,12 +49,44 @@ EndContentData */
 #define GOSSIP_SELECT10 "Ahh... Ironfoe"
 #define GOSSIP_SELECT11 "Thanks, Ragged John. Your story was very uplifting and informative"
 
+enum RaggedJohn
+{
+    QUEST_THE_TRUE_MASTERS        = 4224,
+    QUEST_MOTHERS_MILK            = 4866,
+    SPELL_MOTHERS_MILK            = 16468,
+    SPELL_WICKED_MILKING          = 16472
+};
+
 class npc_ragged_john : public CreatureScript
 {
 public:
     npc_ragged_john() : CreatureScript("npc_ragged_john") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    struct npc_ragged_johnAI : public ScriptedAI
+    {
+        npc_ragged_johnAI(Creature* creature) : ScriptedAI(creature) { }
+
+        void Reset() OVERRIDE { }
+
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+        {
+            if (who->HasAura(SPELL_MOTHERS_MILK))
+            {
+                if (who->GetTypeId() == TYPEID_PLAYER && me->IsWithinDistInMap(who, 15) && who->isInAccessiblePlaceFor(me))
+                {
+                    DoCast(who, SPELL_WICKED_MILKING);
+                    if (Player* player = who->ToPlayer())
+                        player->AreaExploredOrEventHappens(QUEST_MOTHERS_MILK);
+                }
+            }
+
+            ScriptedAI::MoveInLineOfSight(who);
+        }
+
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
+    };
+
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         switch (action)
@@ -105,52 +137,28 @@ public:
                 break;
             case GOSSIP_ACTION_INFO_DEF+11:
                 player->CLOSE_GOSSIP_MENU();
-                player->AreaExploredOrEventHappens(4224);
+                player->AreaExploredOrEventHappens(QUEST_THE_TRUE_MASTERS);
                 break;
         }
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
-        if (creature->isQuestGiver())
+        if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
 
-        if (player->GetQuestStatus(4224) == QUEST_STATUS_INCOMPLETE)
+        if (player->GetQuestStatus(QUEST_THE_TRUE_MASTERS) == QUEST_STATUS_INCOMPLETE)
             player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_HELLO, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
 
         player->SEND_GOSSIP_MENU(2713, creature->GetGUID());
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_ragged_johnAI (creature);
+        return new npc_ragged_johnAI(creature);
     }
-
-    struct npc_ragged_johnAI : public ScriptedAI
-    {
-        npc_ragged_johnAI(Creature* creature) : ScriptedAI(creature) {}
-
-        void Reset() {}
-
-        void MoveInLineOfSight(Unit* who)
-        {
-            if (who->HasAura(16468))
-            {
-                if (who->GetTypeId() == TYPEID_PLAYER && me->IsWithinDistInMap(who, 15) && who->isInAccessiblePlaceFor(me))
-                {
-                    DoCast(who, 16472);
-                    if (Player* player = who->ToPlayer())
-                        player->AreaExploredOrEventHappens(4866);
-                }
-            }
-
-            ScriptedAI::MoveInLineOfSight(who);
-        }
-
-        void EnterCombat(Unit* /*who*/) {}
-    };
 };
 
 void AddSC_burning_steppes()

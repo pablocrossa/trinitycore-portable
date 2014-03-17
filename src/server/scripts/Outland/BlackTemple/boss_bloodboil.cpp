@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@ class boss_gurtogg_bloodboil : public CreatureScript
 public:
     boss_gurtogg_bloodboil() : CreatureScript("boss_gurtogg_bloodboil") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_gurtogg_bloodboilAI (creature);
+        return GetInstanceAI<boss_gurtogg_bloodboilAI>(creature);
     }
 
     struct boss_gurtogg_bloodboilAI : public ScriptedAI
@@ -93,10 +93,9 @@ public:
 
         bool Phase1;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_GURTOGGBLOODBOILEVENT, NOT_STARTED);
+            instance->SetBossState(DATA_GURTOGG_BLOODBOIL, NOT_STARTED);
 
             TargetGUID = 0;
 
@@ -119,23 +118,21 @@ public:
             me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, false);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             DoZoneInCombat();
             Talk(SAY_AGGRO);
-            if (instance)
-                instance->SetData(DATA_GURTOGGBLOODBOILEVENT, IN_PROGRESS);
+            instance->SetBossState(DATA_GURTOGG_BLOODBOIL, IN_PROGRESS);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_GURTOGGBLOODBOILEVENT, DONE);
+            instance->SetBossState(DATA_GURTOGG_BLOODBOIL, DONE);
 
             Talk(SAY_DEATH);
         }
@@ -155,7 +152,7 @@ public:
             {
                 Unit* target = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                                                                 //only on alive players
-                if (target && target->isAlive() && target->GetTypeId() == TYPEID_PLAYER)
+                if (target && target->IsAlive() && target->GetTypeId() == TYPEID_PLAYER)
                     targets.push_back(target);
             }
 
@@ -196,20 +193,20 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
 
             if (ArcingSmashTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_ARCING_SMASH);
+                DoCastVictim(SPELL_ARCING_SMASH);
                 ArcingSmashTimer = 10000;
             } else ArcingSmashTimer -= diff;
 
             if (FelAcidTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_FEL_ACID);
+                DoCastVictim(SPELL_FEL_ACID);
                 FelAcidTimer = 25000;
             } else FelAcidTimer -= diff;
 
@@ -226,8 +223,8 @@ public:
             {
                 if (BewilderingStrikeTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_BEWILDERING_STRIKE);
-                    float mt_threat = DoGetThreat(me->getVictim());
+                    DoCastVictim(SPELL_BEWILDERING_STRIKE);
+                    float mt_threat = DoGetThreat(me->GetVictim());
                     if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO, 1))
                         me->AddThreat(target, mt_threat);
                     BewilderingStrikeTimer = 20000;
@@ -235,14 +232,14 @@ public:
 
                 if (EjectTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_EJECT1);
-                    DoModifyThreatPercent(me->getVictim(), -40);
+                    DoCastVictim(SPELL_EJECT1);
+                    DoModifyThreatPercent(me->GetVictim(), -40);
                     EjectTimer = 15000;
                 } else EjectTimer -= diff;
 
                 if (AcidicWoundTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_ACIDIC_WOUND);
+                    DoCastVictim(SPELL_ACIDIC_WOUND);
                     AcidicWoundTimer = 10000;
                 } else AcidicWoundTimer -= diff;
 
@@ -251,7 +248,7 @@ public:
                     if (BloodboilCount < 5)                      // Only cast it five times.
                     {
                         //CastBloodboil(); // Causes issues on windows, so is commented out.
-                        DoCast(me->getVictim(), SPELL_BLOODBOIL);
+                        DoCastVictim(SPELL_BLOODBOIL);
                         ++BloodboilCount;
                         BloodboilTimer = 10000*BloodboilCount;
                     }
@@ -262,13 +259,13 @@ public:
             {
                 if (AcidGeyserTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_ACID_GEYSER);
+                    DoCastVictim(SPELL_ACID_GEYSER);
                     AcidGeyserTimer = 30000;
                 } else AcidGeyserTimer -= diff;
 
                 if (EjectTimer <= diff)
                 {
-                    DoCast(me->getVictim(), SPELL_EJECT2);
+                    DoCastVictim(SPELL_EJECT2);
                     EjectTimer = 15000;
                 } else EjectTimer -= diff;
             }

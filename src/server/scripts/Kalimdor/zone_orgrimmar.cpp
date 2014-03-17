@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class npc_shenthul : public CreatureScript
 public:
     npc_shenthul() : CreatureScript("npc_shenthul") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest)
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) OVERRIDE
     {
         if (quest->GetQuestId() == QUEST_SHATTERED_SALUTE)
         {
@@ -57,14 +57,14 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_shenthulAI (creature);
+        return new npc_shenthulAI(creature);
     }
 
     struct npc_shenthulAI : public ScriptedAI
     {
-        npc_shenthulAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_shenthulAI(Creature* creature) : ScriptedAI(creature) { }
 
         bool CanTalk;
         bool CanEmote;
@@ -72,7 +72,7 @@ public:
         uint32 ResetTimer;
         uint64 PlayerGUID;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             CanTalk = false;
             CanEmote = false;
@@ -81,15 +81,15 @@ public:
             PlayerGUID = 0;
         }
 
-        void EnterCombat(Unit* /*who*/) {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (CanEmote)
             {
                 if (ResetTimer <= diff)
                 {
-                    if (Player* player = Unit::GetPlayer(*me, PlayerGUID))
+                    if (Player* player = ObjectAccessor::GetPlayer(*me, PlayerGUID))
                     {
                         if (player->GetTypeId() == TYPEID_PLAYER && player->GetQuestStatus(QUEST_SHATTERED_SALUTE) == QUEST_STATUS_INCOMPLETE)
                             player->FailQuest(QUEST_SHATTERED_SALUTE);
@@ -114,7 +114,7 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void ReceiveEmote(Player* player, uint32 emote)
+        void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
         {
             if (emote == TEXT_EMOTE_SALUTE && player->GetQuestStatus(QUEST_SHATTERED_SALUTE) == QUEST_STATUS_INCOMPLETE)
             {
@@ -155,7 +155,7 @@ class npc_thrall_warchief : public CreatureScript
 public:
     npc_thrall_warchief() : CreatureScript("npc_thrall_warchief") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         switch (action)
@@ -192,9 +192,9 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
-        if (creature->isQuestGiver())
+        if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
 
         if (player->GetQuestStatus(QUEST_6566) == QUEST_STATUS_INCOMPLETE)
@@ -204,40 +204,40 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_thrall_warchiefAI (creature);
+        return new npc_thrall_warchiefAI(creature);
     }
 
     struct npc_thrall_warchiefAI : public ScriptedAI
     {
-        npc_thrall_warchiefAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_thrall_warchiefAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 ChainLightningTimer;
         uint32 ShockTimer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             ChainLightningTimer = 2000;
             ShockTimer = 8000;
         }
 
-        void EnterCombat(Unit* /*who*/) {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
 
             if (ChainLightningTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_CHAIN_LIGHTNING);
+                DoCastVictim(SPELL_CHAIN_LIGHTNING);
                 ChainLightningTimer = 9000;
             } else ChainLightningTimer -= diff;
 
             if (ShockTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_SHOCK);
+                DoCastVictim(SPELL_SHOCK);
                 ShockTimer = 15000;
             } else ShockTimer -= diff;
 

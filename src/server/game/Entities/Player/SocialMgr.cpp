@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ void PlayerSocial::SendSocialList(Player* player)
     }
 
     player->GetSession()->SendPacket(&data);
-    sLog->outDebug(LOG_FILTER_NETWORKIO, "WORLD: Sent SMSG_CONTACT_LIST");
+    TC_LOG_DEBUG("network", "WORLD: Sent SMSG_CONTACT_LIST");
 }
 
 bool PlayerSocial::HasFriend(uint32 friendGuid)
@@ -191,13 +191,9 @@ bool PlayerSocial::HasIgnore(uint32 ignore_guid)
     return false;
 }
 
-SocialMgr::SocialMgr()
-{
-}
+SocialMgr::SocialMgr() { }
 
-SocialMgr::~SocialMgr()
-{
-}
+SocialMgr::~SocialMgr() { }
 
 void SocialMgr::GetFriendInfo(Player* player, uint32 friendGUID, FriendInfo &friendInfo)
 {
@@ -220,12 +216,12 @@ void SocialMgr::GetFriendInfo(Player* player, uint32 friendGUID, FriendInfo &fri
     // PLAYER see his team only and PLAYER can't see MODERATOR, GAME MASTER, ADMINISTRATOR characters
     // MODERATOR, GAME MASTER, ADMINISTRATOR can see all
 
-    if (!player->GetSession()->HasPermission(RBAC_PERM_WHO_SEE_ALL_SEC_LEVELS) &&
+    if (!player->GetSession()->HasPermission(rbac::RBAC_PERM_WHO_SEE_ALL_SEC_LEVELS) &&
         target->GetSession()->GetSecurity() > AccountTypes(sWorld->getIntConfig(CONFIG_GM_LEVEL_IN_WHO_LIST)))
         return;
 
     // player can see member of other team only if CONFIG_ALLOW_TWO_SIDE_WHO_LIST
-    if (target->GetTeam() != player->GetTeam() && !player->GetSession()->HasPermission(RBAC_PERM_TWO_SIDE_WHO_LIST))
+    if (target->GetTeam() != player->GetTeam() && !player->GetSession()->HasPermission(rbac::RBAC_PERM_TWO_SIDE_WHO_LIST))
         return;
 
     if (target->IsVisibleGloballyFor(player))
@@ -302,10 +298,10 @@ void SocialMgr::BroadcastToFriendListers(Player* player, WorldPacket* packet)
                 continue;
 
             WorldSession* session = target->GetSession();
-            if (!session->HasPermission(RBAC_PERM_WHO_SEE_ALL_SEC_LEVELS) && player->GetSession()->GetSecurity() > gmSecLevel)
+            if (!session->HasPermission(rbac::RBAC_PERM_WHO_SEE_ALL_SEC_LEVELS) && player->GetSession()->GetSecurity() > gmSecLevel)
                 continue;
 
-            if (target->GetTeam() != player->GetTeam() && !session->HasPermission(RBAC_PERM_TWO_SIDE_WHO_LIST))
+            if (target->GetTeam() != player->GetTeam() && !session->HasPermission(rbac::RBAC_PERM_TWO_SIDE_WHO_LIST))
                 continue;
 
             if (player->IsVisibleGloballyFor(target))

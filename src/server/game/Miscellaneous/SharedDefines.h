@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -42,6 +42,14 @@ enum LootModes
     LOOT_MODE_HARD_MODE_2              = 0x4,
     LOOT_MODE_HARD_MODE_3              = 0x8,
     LOOT_MODE_HARD_MODE_4              = 0x10
+};
+
+enum Expansions
+{
+    EXPANSION_CLASSIC                  = 0,
+    EXPANSION_THE_BURNING_CRUSADE      = 1,
+    EXPANSION_WRATH_OF_THE_LICH_KING   = 2,
+    MAX_EXPANSIONS                     = 3
 };
 
 enum Gender
@@ -386,7 +394,7 @@ enum SpellAttr3
     SPELL_ATTR3_ONLY_TARGET_PLAYERS              = 0x00000100, //  8 can only target players
     SPELL_ATTR3_TRIGGERED_CAN_TRIGGER_PROC_2     = 0x00000200, //  9 triggered from effect?
     SPELL_ATTR3_MAIN_HAND                        = 0x00000400, // 10 Main hand weapon required
-    SPELL_ATTR3_BATTLEGROUND                     = 0x00000800, // 11 Can casted only on battleground
+    SPELL_ATTR3_BATTLEGROUND                     = 0x00000800, // 11 Can only be cast in battleground
     SPELL_ATTR3_ONLY_TARGET_GHOSTS               = 0x00001000, // 12
     SPELL_ATTR3_UNK13                            = 0x00002000, // 13
     SPELL_ATTR3_IS_HONORLESS_TARGET              = 0x00004000, // 14 "Honorless Target" only this spells have this flag
@@ -1233,7 +1241,8 @@ enum Mechanics
     MECHANIC_DISCOVERY        = 28,
     MECHANIC_IMMUNE_SHIELD    = 29,                         // Divine (Blessing) Shield/Protection and Ice Block
     MECHANIC_SAPPED           = 30,
-    MECHANIC_ENRAGED          = 31
+    MECHANIC_ENRAGED          = 31,
+    MAX_MECHANIC = 32
 };
 
 // Used for spell 42292 Immune Movement Impairment and Loss of Control (0x49967ca6)
@@ -1494,7 +1503,8 @@ enum GameObjectDynamicLowFlags
     GO_DYNFLAG_LO_ACTIVATE          = 0x01,                 // enables interaction with GO
     GO_DYNFLAG_LO_ANIMATE           = 0x02,                 // possibly more distinct animation of GO
     GO_DYNFLAG_LO_NO_INTERACT       = 0x04,                 // appears to disable interaction (not fully verified)
-    GO_DYNFLAG_LO_SPARKLE           = 0x08                  // makes GO sparkle
+    GO_DYNFLAG_LO_SPARKLE           = 0x08,                 // makes GO sparkle
+    GO_DYNFLAG_LO_STOPPED           = 0x10                  // Transport is stopped
 };
 
 enum GameObjectDestructibleState
@@ -3314,7 +3324,7 @@ enum BattlegroundTypeId
     BATTLEGROUND_DS             = 10, // Dalaran Sewers
     BATTLEGROUND_RV             = 11, // Ring of Valor
     BATTLEGROUND_IC             = 30, // Isle of Conquest
-    BATTLEGROUND_RB             = 32 // Random Battleground
+    BATTLEGROUND_RB             = 32  // Random Battleground
 };
 
 #define MAX_BATTLEGROUND_TYPE_ID 33
@@ -3540,7 +3550,7 @@ enum PartyResult
 };
 
 const uint32 MMAP_MAGIC = 0x4d4d4150; // 'MMAP'
-#define MMAP_VERSION 3
+#define MMAP_VERSION 5
 
 struct MmapTileHeader
 {
@@ -3551,7 +3561,7 @@ struct MmapTileHeader
     bool usesLiquids : 1;
 
     MmapTileHeader() : mmapMagic(MMAP_MAGIC), dtVersion(DT_NAVMESH_VERSION),
-        mmapVersion(MMAP_VERSION), size(0), usesLiquids(true) {}
+        mmapVersion(MMAP_VERSION), size(0), usesLiquids(true) { }
 };
 
 enum NavTerrain

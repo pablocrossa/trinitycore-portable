@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
 #define BG_AV_KILL_SURVIVING_CAPTAIN    2
 #define BG_AV_REP_SURVIVING_CAPTAIN     125
 
-#define AV_EVENT_START_BATTLE           9166 // Achievement: The Alterac Blitz
+#define BG_AV_EVENT_START_BATTLE           9166 // Achievement: The Alterac Blitz
 
 enum BG_AV_Sounds
 { /// @todo: get out if there comes a sound when neutral team captures mine
@@ -1046,7 +1046,7 @@ const uint32 BG_AV_CreatureInfo[AV_NPC_INFO_MAX][4] =
     { 13326, 1216, 59, 59 }, //Seasoned Defender
     { 13331, 1216, 60, 60 }, //Veteran Defender
     { 13422, 1216, 61, 61 }, //Champion Defender
-    { 13358, 1216, 59, 60 }, //Stormpike Bowman /// @todo: Confirm if this is correct. Author assumpted 60,61 & 69,70, but wouldn't work here
+    { 13358, 1216, 59, 60 }, //Stormpike Bowman /// @todo: Confirm if this is correct. Author assumpted 60, 61 & 69, 70, but wouldn't work here
     { 11949, 469, 0, 0}, //not spawned with this data, but used for handlekillunit
     { 11948, 469, 0, 0}, //not spawned with this data, but used for handlekillunit
     { 12053, 1214, 58, 58 }, //Frostwolf Guardian
@@ -1527,7 +1527,8 @@ inline BG_AV_Nodes &operator++(BG_AV_Nodes &i){ return i = BG_AV_Nodes(i + 1); }
 
 struct BattlegroundAVScore : public BattlegroundScore
 {
-    BattlegroundAVScore() : GraveyardsAssaulted(0), GraveyardsDefended(0), TowersAssaulted(0), TowersDefended(0), MinesCaptured(0), LeadersKilled(0), SecondaryObjectives(0) { }
+    BattlegroundAVScore() : GraveyardsAssaulted(0), GraveyardsDefended(0), TowersAssaulted(0),
+        TowersDefended(0), MinesCaptured(0), LeadersKilled(0), SecondaryObjectives(0) { }
     ~BattlegroundAVScore() { }
     uint32 GraveyardsAssaulted;
     uint32 GraveyardsDefended;
@@ -1550,28 +1551,27 @@ class BattlegroundAV : public Battleground
         void StartingEventOpenDoors();
 
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
-        void HandleAreaTrigger(Player* Source, uint32 Trigger);
+        void HandleAreaTrigger(Player* player, uint32 trigger);
         bool SetupBattleground();
         void ResetBGSubclass();
 
         /*general stuff*/
         void UpdateScore(uint16 team, int16 points);
-        void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);
+        void UpdatePlayerScore(Player* player, uint32 type, uint32 value, bool doAddHonor = true);
 
         /*handlestuff*/ //these are functions which get called from extern
         void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj);
         void HandleKillPlayer(Player* player, Player* killer);
         void HandleKillUnit(Creature* unit, Player* killer);
         void HandleQuestComplete(uint32 questid, Player* player);
-        bool PlayerCanDoMineQuest(int32 GOId, uint32 team);
+        bool CanActivateGO(int32 GOId, uint32 team) const;
 
         void EndBattleground(uint32 winner);
 
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 
-        /* achievement req. */
-        bool IsBothMinesControlledByTeam(uint32 team) const;
-        bool IsAllTowersControlledAndCaptainAlive(uint32 team) const;
+        // Achievement: Av perfection and Everything counts
+        bool CheckAchievementCriteriaMeet(uint32 criteriaId, Player const* source, Unit const* target = NULL, uint32 miscvalue1 = 0);
 
         uint32 GetPrematureWinner();
 

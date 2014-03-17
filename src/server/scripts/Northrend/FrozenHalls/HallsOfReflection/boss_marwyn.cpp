@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -19,7 +19,7 @@
 #include "ScriptedCreature.h"
 #include "halls_of_reflection.h"
 
-enum Yells
+enum Texts
 {
     SAY_AGGRO                                     = 0,
     SAY_SLAY                                      = 1,
@@ -49,28 +49,26 @@ class boss_marwyn : public CreatureScript
 public:
     boss_marwyn() : CreatureScript("boss_marwyn") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_marwynAI(creature);
+        return GetInstanceAI<boss_marwynAI>(creature);
     }
 
     struct boss_marwynAI : public boss_horAI
     {
-        boss_marwynAI(Creature* creature) : boss_horAI(creature) {}
+        boss_marwynAI(Creature* creature) : boss_horAI(creature) { }
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             boss_horAI::Reset();
 
-            if (instance)
-                instance->SetData(DATA_MARWYN_EVENT, NOT_STARTED);
+            instance->SetBossState(DATA_MARWYN_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
-            if (instance)
-                instance->SetData(DATA_MARWYN_EVENT, IN_PROGRESS);
+            instance->SetBossState(DATA_MARWYN_EVENT, IN_PROGRESS);
 
             events.ScheduleEvent(EVENT_OBLITERATE, 30000);          /// @todo Check timer
             events.ScheduleEvent(EVENT_WELL_OF_CORRUPTION, 13000);
@@ -78,20 +76,19 @@ public:
             events.ScheduleEvent(EVENT_SHARED_SUFFERING, 20000);    /// @todo Check timer
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_MARWYN_EVENT, DONE);
+            instance->SetBossState(DATA_MARWYN_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             // Return since we have no target
             if (!UpdateVictim())

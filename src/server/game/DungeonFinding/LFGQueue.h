@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -71,7 +71,7 @@ struct LfgQueueData
 
 struct LfgWaitTime
 {
-    LfgWaitTime(): time(-1), number(0) {}
+    LfgWaitTime(): time(-1), number(0) { }
     int32 time;                                            ///< Wait time
     uint32 number;                                         ///< Number of people used to get that wait time
 };

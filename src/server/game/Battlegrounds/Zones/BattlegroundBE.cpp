@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ void BattlegroundBE::HandleKillPlayer(Player* player, Player* killer)
 
     if (!killer)
     {
-        sLog->outError(LOG_FILTER_BATTLEGROUND, "Killer player not found");
+        TC_LOG_ERROR("bg.battleground", "Killer player not found");
         return;
     }
 
@@ -133,7 +133,7 @@ bool BattlegroundBE::SetupBattleground()
         || !AddObject(BG_BE_OBJECT_BUFF_1, BG_BE_OBJECT_TYPE_BUFF_1, 6249.042f, 275.3239f, 11.22033f, -1.448624f, 0, 0, 0.6626201f, -0.7489557f, 120)
         || !AddObject(BG_BE_OBJECT_BUFF_2, BG_BE_OBJECT_TYPE_BUFF_2, 6228.26f, 249.566f, 11.21812f, -0.06981307f, 0, 0, 0.03489945f, -0.9993908f, 120))
     {
-        sLog->outError(LOG_FILTER_SQL, "BatteGroundBE: Failed to spawn some object!");
+        TC_LOG_ERROR("sql.sql", "BatteGroundBE: Failed to spawn some object!");
         return false;
     }
 
@@ -142,12 +142,10 @@ bool BattlegroundBE::SetupBattleground()
 
 void BattlegroundBE::UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor)
 {
-
     BattlegroundScoreMap::iterator itr = PlayerScores.find(Source->GetGUID());
     if (itr == PlayerScores.end())                         // player not found...
         return;
 
     //there is nothing special in this score
     Battleground::UpdatePlayerScore(Source, type, value, doAddHonor);
-
 }

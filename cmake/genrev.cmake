@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 Trinity <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -58,7 +58,7 @@ else()
     # No valid ways available to find/set the revision/hash, so let's force some defaults
     message(STATUS "
     Could not find a proper repository signature (hash) - you may need to pull tags with git fetch -t
-    Continuing anyway - note that the versionstring will be set to \"unknown 1970-01-01 00:00:00 (Archived)"\")
+    Continuing anyway - note that the versionstring will be set to \"unknown 1970-01-01 00:00:00 (Archived)\"")
     set(rev_date "1970-01-01 00:00:00 +0000")
     set(rev_hash "unknown")
     set(rev_branch "Archived")

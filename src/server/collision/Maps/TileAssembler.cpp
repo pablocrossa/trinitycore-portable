@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -98,7 +98,16 @@ namespace VMAP
 
             printf("Creating map tree for map %u...\n", map_iter->first);
             BIH pTree;
-            pTree.build(mapSpawns, BoundsTrait<ModelSpawn*>::getBounds);
+
+            try
+            {
+                pTree.build(mapSpawns, BoundsTrait<ModelSpawn*>::getBounds);
+            }
+            catch (std::exception& e)
+            {
+                printf("Exception ""%s"" when calling pTree.build", e.what());
+                return false;
+            }
 
             // ===> possibly move this code to StaticMapTree class
             std::map<uint32, uint32> modelNodeIdx;
@@ -152,23 +161,25 @@ namespace VMAP
                 uint32 x, y;
                 StaticMapTree::unpackTileID(tile->first, x, y);
                 tilefilename << std::setw(2) << x << '_' << std::setw(2) << y << ".vmtile";
-                FILE* tilefile = fopen(tilefilename.str().c_str(), "wb");
-                // file header
-                if (success && fwrite(VMAP_MAGIC, 1, 8, tilefile) != 8) success = false;
-                // write number of tile spawns
-                if (success && fwrite(&nSpawns, sizeof(uint32), 1, tilefile) != 1) success = false;
-                // write tile spawns
-                for (uint32 s=0; s<nSpawns; ++s)
+                if (FILE* tilefile = fopen(tilefilename.str().c_str(), "wb"))
                 {
-                    if (s)
-                        ++tile;
-                    const ModelSpawn &spawn2 = map_iter->second->UniqueEntries[tile->second];
-                    success = success && ModelSpawn::writeToFile(tilefile, spawn2);
-                    // MapTree nodes to update when loading tile:
-                    std::map<uint32, uint32>::iterator nIdx = modelNodeIdx.find(spawn2.ID);
-                    if (success && fwrite(&nIdx->second, sizeof(uint32), 1, tilefile) != 1) success = false;
+                    // file header
+                    if (success && fwrite(VMAP_MAGIC, 1, 8, tilefile) != 8) success = false;
+                    // write number of tile spawns
+                    if (success && fwrite(&nSpawns, sizeof(uint32), 1, tilefile) != 1) success = false;
+                    // write tile spawns
+                    for (uint32 s=0; s<nSpawns; ++s)
+                    {
+                        if (s)
+                            ++tile;
+                        const ModelSpawn &spawn2 = map_iter->second->UniqueEntries[tile->second];
+                        success = success && ModelSpawn::writeToFile(tilefile, spawn2);
+                        // MapTree nodes to update when loading tile:
+                        std::map<uint32, uint32>::iterator nIdx = modelNodeIdx.find(spawn2.ID);
+                        if (success && fwrite(&nIdx->second, sizeof(uint32), 1, tilefile) != 1) success = false;
+                    }
+                    fclose(tilefile);
                 }
-                fclose(tilefile);
             }
             // break; //test, extract only first map; TODO: remvoe this line
         }
@@ -497,7 +508,8 @@ namespace VMAP
             return false;
         }
 
-        char ident[8];
+        char ident[9];
+        ident[8] = '\0';
         int readOperation = 0;
 
         READ_OR_RETURN(&ident, 8);
@@ -516,7 +528,8 @@ namespace VMAP
         for (uint32 g = 0; g < groups && succeed; ++g)
             succeed = groupsArray[g].Read(rf);
 
-        fclose(rf);
+        if (succeed) /// rf will be freed inside Read if the function had any errors.
+            fclose(rf);
         return succeed;
     }
 

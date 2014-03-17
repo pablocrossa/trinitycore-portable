@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ class HostileReference : public Reference<Unit, ThreatManager>
         // Inform the source, that the status of that reference was changed
         void fireStatusChanged(ThreatRefStatusChangeEvent& threatRefStatusChangeEvent);
 
-        Unit* getSourceUnit();
+        Unit* GetSourceUnit();
     private:
         float iThreat;
         float iTempThreatModifier;                          // used for taunt
@@ -224,7 +224,7 @@ class ThreatManager
 
         HostileReference* getCurrentVictim() const { return iCurrentVictim; }
 
-        Unit* getOwner() const { return iOwner; }
+        Unit* GetOwner() const { return iOwner; }
 
         Unit* getHostilTarget();
 
@@ -281,7 +281,7 @@ namespace Trinity
     class ThreatOrderPred
     {
         public:
-            ThreatOrderPred(bool ascending = false) : m_ascending(ascending) {}
+            ThreatOrderPred(bool ascending = false) : m_ascending(ascending) { }
             bool operator() (HostileReference const* a, HostileReference const* b) const
             {
                 return m_ascending ? a->getThreat() < b->getThreat() : a->getThreat() > b->getThreat();

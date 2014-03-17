@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ class boss_selin_fireheart : public CreatureScript
 public:
     boss_selin_fireheart() : CreatureScript("boss_selin_fireheart") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_selin_fireheartAI (creature);
+        return GetInstanceAI<boss_selin_fireheartAI>(creature);
     };
 
     struct boss_selin_fireheartAI : public ScriptedAI
@@ -77,16 +77,13 @@ public:
 
             Crystals.clear();
             //GUIDs per instance is static, so we only need to load them once.
-            if (instance)
+            uint32 size = instance->GetData(DATA_FEL_CRYSTAL_SIZE);
+            for (uint8 i = 0; i < size; ++i)
             {
-                uint32 size = instance->GetData(DATA_FEL_CRYSTAL_SIZE);
-                for (uint8 i = 0; i < size; ++i)
-                {
-                    instance->SetData64(DATA_FEL_CRYSTAL, i);
-                    uint64 guid = instance->GetData64(DATA_FEL_CRYSTAL);
-                    sLog->outDebug(LOG_FILTER_TSCR, "Selin: Adding Fel Crystal " UI64FMTD " to list", guid);
-                    Crystals.push_back(guid);
-                }
+                instance->SetData64(DATA_FEL_CRYSTAL, i);
+                uint64 guid = instance->GetData64(DATA_FEL_CRYSTAL);
+                TC_LOG_DEBUG("scripts", "Selin: Adding Fel Crystal " UI64FMTD " to list", guid);
+                Crystals.push_back(guid);
             }
         }
 
@@ -105,27 +102,24 @@ public:
 
         uint64 CrystalGUID;                                     // This will help us create a pointer to the crystal we are draining. We store GUIDs, never units in case unit is deleted/offline (offline if player of course).
 
-        void Reset()
+        void Reset() OVERRIDE
         {
-            if (instance)
+            //for (uint8 i = 0; i < CRYSTALS_NUMBER; ++i)
+            for (std::list<uint64>::const_iterator itr = Crystals.begin(); itr != Crystals.end(); ++itr)
             {
-                //for (uint8 i = 0; i < CRYSTALS_NUMBER; ++i)
-                for (std::list<uint64>::const_iterator itr = Crystals.begin(); itr != Crystals.end(); ++itr)
+                //Unit* unit = Unit::GetUnit(*me, FelCrystals[i]);
+                if (Creature* creature = Unit::GetCreature(*me, *itr))
                 {
-                    //Unit* unit = Unit::GetUnit(*me, FelCrystals[i]);
-                    if (Creature* creature = Unit::GetCreature(*me, *itr))
-                    {
-                        if (!creature->isAlive())
-                            creature->Respawn();      // Let the core handle setting death state, etc.
+                    if (!creature->IsAlive())
+                        creature->Respawn();      // Let the core handle setting death state, etc.
 
-                        // Only need to set unselectable flag. You can't attack unselectable units so non_attackable flag is not necessary here.
-                        creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                    }
+                    // Only need to set unselectable flag. You can't attack unselectable units so non_attackable flag is not necessary here.
+                    creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 }
+            }
 
-                // Set Inst data for encounter
-                instance->SetData(DATA_SELIN_EVENT, NOT_STARTED);
-            } else sLog->outError(LOG_FILTER_TSCR, ERROR_INST_DATA);
+            // Set Inst data for encounter
+            instance->SetData(DATA_SELIN_EVENT, NOT_STARTED);
 
             DrainLifeTimer = urand(3000, 7000);
             DrainManaTimer = DrainLifeTimer + 5000;
@@ -156,7 +150,7 @@ public:
                 pCrystal = NULL;
                 //pCrystal = Unit::GetUnit(*me, FelCrystals[i]);
                 pCrystal = Unit::GetUnit(*me, *itr);
-                if (pCrystal && pCrystal->isAlive())
+                if (pCrystal && pCrystal->IsAlive())
                 {
                     // select nearest
                     if (!CrystalChosen || me->GetDistanceOrder(pCrystal, CrystalChosen, false))
@@ -192,29 +186,28 @@ public:
             {
                 //Creature* pCrystal = (Unit::GetCreature(*me, FelCrystals[i]));
                 Creature* pCrystal = Unit::GetCreature(*me, *itr);
-                if (pCrystal && pCrystal->isAlive())
+                if (pCrystal && pCrystal->IsAlive())
                     pCrystal->Kill(pCrystal);
             }
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
-            if (instance)
-                instance->SetData(DATA_SELIN_EVENT, IN_PROGRESS);
+            instance->SetData(DATA_SELIN_EVENT, IN_PROGRESS);
          }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_KILL);
         }
 
-        void MovementInform(uint32 type, uint32 id)
+        void MovementInform(uint32 type, uint32 id) OVERRIDE
         {
             if (type == POINT_MOTION_TYPE && id == 1)
             {
                 Unit* CrystalChosen = Unit::GetUnit(*me, CrystalGUID);
-                if (CrystalChosen && CrystalChosen->isAlive())
+                if (CrystalChosen && CrystalChosen->IsAlive())
                 {
                     // Make the crystal attackable
                     // We also remove NON_ATTACKABLE in case the database has it set.
@@ -225,24 +218,21 @@ public:
                 else
                 {
                     // Make an error message in case something weird happened here
-                    sLog->outError(LOG_FILTER_TSCR, "Selin Fireheart unable to drain crystal as the crystal is either dead or despawned");
+                    TC_LOG_ERROR("scripts", "Selin Fireheart unable to drain crystal as the crystal is either dead or despawned");
                     DrainingCrystal = false;
                 }
             }
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
-
-            if (!instance)
-                return;
 
             instance->SetData(DATA_SELIN_EVENT, DONE);         // Encounter complete!
             ShatterRemainingCrystals();
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -271,7 +261,7 @@ public:
 
                 if (FelExplosionTimer <= diff)
                 {
-                    if (!me->IsNonMeleeSpellCasted(false))
+                    if (!me->IsNonMeleeSpellCast(false))
                     {
                         DoCast(me, SPELL_FEL_EXPLOSION);
                         FelExplosionTimer = 2000;
@@ -303,14 +293,14 @@ public:
                         Talk(SAY_EMPOWERED);
 
                         Unit* CrystalChosen = Unit::GetUnit(*me, CrystalGUID);
-                        if (CrystalChosen && CrystalChosen->isAlive())
+                        if (CrystalChosen && CrystalChosen->IsAlive())
                             // Use Deal Damage to kill it, not setDeathState.
                             CrystalChosen->Kill(CrystalChosen);
 
                         CrystalGUID = 0;
 
                         me->GetMotionMaster()->Clear();
-                        me->GetMotionMaster()->MoveChase(me->getVictim());
+                        me->GetMotionMaster()->MoveChase(me->GetVictim());
                     } else EmpowerTimer -= diff;
                 }
             }
@@ -320,32 +310,33 @@ public:
     };
 };
 
-class mob_fel_crystal : public CreatureScript
+class npc_fel_crystal : public CreatureScript
 {
 public:
-    mob_fel_crystal() : CreatureScript("mob_fel_crystal") { }
+    npc_fel_crystal() : CreatureScript("npc_fel_crystal") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new mob_fel_crystalAI (creature);
+        return new npc_fel_crystalAI(creature);
     };
 
-    struct mob_fel_crystalAI : public ScriptedAI
+    struct npc_fel_crystalAI : public ScriptedAI
     {
-        mob_fel_crystalAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_fel_crystalAI(Creature* creature) : ScriptedAI(creature) { }
 
-        void Reset() {}
-        void EnterCombat(Unit* /*who*/) {}
-        void AttackStart(Unit* /*who*/) {}
-        void MoveInLineOfSight(Unit* /*who*/) {}
-        void UpdateAI(uint32 /*diff*/) {}
+        void Reset() OVERRIDE { }
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
+        void AttackStart(Unit* /*who*/) OVERRIDE { }
+        void MoveInLineOfSight(Unit* /*who*/) OVERRIDE { }
 
-        void JustDied(Unit* /*killer*/)
+        void UpdateAI(uint32 /*diff*/) OVERRIDE { }
+
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             if (InstanceScript* instance = me->GetInstanceScript())
             {
                 Creature* Selin = (Unit::GetCreature(*me, instance->GetData64(DATA_SELIN)));
-                if (Selin && Selin->isAlive())
+                if (Selin && Selin->IsAlive())
                 {
                     if (CAST_AI(boss_selin_fireheart::boss_selin_fireheartAI, Selin->AI())->CrystalGUID == me->GetGUID())
                     {
@@ -353,14 +344,14 @@ public:
                         CAST_AI(boss_selin_fireheart::boss_selin_fireheartAI, Selin->AI())->DrainingCrystal = false;
                         CAST_AI(boss_selin_fireheart::boss_selin_fireheartAI, Selin->AI())->IsDraining = false;
                         CAST_AI(boss_selin_fireheart::boss_selin_fireheartAI, Selin->AI())->EmpowerTimer = 10000;
-                        if (Selin->getVictim())
+                        if (Selin->GetVictim())
                         {
-                            Selin->AI()->AttackStart(Selin->getVictim());
-                            Selin->GetMotionMaster()->MoveChase(Selin->getVictim());
+                            Selin->AI()->AttackStart(Selin->GetVictim());
+                            Selin->GetMotionMaster()->MoveChase(Selin->GetVictim());
                         }
                     }
                 }
-            } else sLog->outError(LOG_FILTER_TSCR, ERROR_INST_DATA);
+            } else TC_LOG_ERROR("scripts", ERROR_INST_DATA);
         }
     };
 };
@@ -368,5 +359,5 @@ public:
 void AddSC_boss_selin_fireheart()
 {
     new boss_selin_fireheart();
-    new mob_fel_crystal();
+    new npc_fel_crystal();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -146,11 +146,11 @@ enum GuildEvents
     GE_RANK_DELETED                     = 11,
     GE_SIGNED_ON                        = 12,
     GE_SIGNED_OFF                       = 13,
-    GE_GUILDBANKBAGSLOTS_CHANGED        = 14,
+    GE_GUILDBANKBAGSLOTS_CHANGED        = 14,   /// TODO: Sent when items are moved in gbank - all players with bank open will send tab query
     GE_BANK_TAB_PURCHASED               = 15,
     GE_BANK_TAB_UPDATED                 = 16,
     GE_BANK_MONEY_SET                   = 17,
-    GE_BANK_MONEY_CHANGED               = 18,
+    GE_BANK_TAB_AND_MONEY_UPDATED       = 18,
     GE_BANK_TEXT_CHANGED                = 19,
 };
 
@@ -292,6 +292,7 @@ private:
             m_zoneId(0),
             m_level(0),
             m_class(0),
+            m_flags(GUILDMEMBER_STATUS_NONE),
             m_logoutTime(::time(NULL)),
             m_accountId(0),
             m_rankId(rankId)
@@ -314,7 +315,7 @@ private:
 
         bool LoadFromDB(Field* fields);
         void SaveToDB(SQLTransaction& trans) const;
-        void WritePacket(WorldPacket& data) const;
+        void WritePacket(WorldPacket& data, bool sendOfficerNote) const;
 
         uint64 GetGUID() const { return m_guid; }
         std::string const& GetName() const { return m_name; }
@@ -443,7 +444,7 @@ private:
     class LogHolder
     {
     public:
-        LogHolder(uint32 guildId, uint32 maxRecords) : m_guildId(guildId), m_maxRecords(maxRecords), m_nextGUID(uint32(GUILD_EVENT_LOG_GUID_UNDEFINED)) { }
+        LogHolder(uint32 maxRecords) : m_maxRecords(maxRecords), m_nextGUID(uint32(GUILD_EVENT_LOG_GUID_UNDEFINED)) { }
         ~LogHolder();
 
         uint8 GetSize() const { return uint8(m_log.size()); }
@@ -459,7 +460,6 @@ private:
 
     private:
         GuildLog m_log;
-        uint32 m_guildId;
         uint32 m_maxRecords;
         uint32 m_nextGUID;
     };
@@ -471,7 +471,8 @@ private:
         RankInfo(): m_guildId(0), m_rankId(GUILD_RANK_NONE), m_rights(GR_RIGHT_EMPTY), m_bankMoneyPerDay(0) { }
         RankInfo(uint32 guildId) : m_guildId(guildId), m_rankId(GUILD_RANK_NONE), m_rights(GR_RIGHT_EMPTY), m_bankMoneyPerDay(0) { }
         RankInfo(uint32 guildId, uint8 rankId, std::string const& name, uint32 rights, uint32 money) :
-            m_guildId(guildId), m_rankId(rankId), m_name(name), m_rights(rights), m_bankMoneyPerDay(money) { }
+            m_guildId(guildId), m_rankId(rankId), m_name(name), m_rights(rights),
+            m_bankMoneyPerDay(rankId != GR_GUILDMASTER ? money : GUILD_WITHDRAW_MONEY_UNLIMITED) { }
 
         void LoadFromDB(Field* fields);
         void SaveToDB(SQLTransaction& trans) const;
@@ -657,8 +658,10 @@ public:
     std::string const& GetMOTD() const { return m_motd; }
     std::string const& GetInfo() const { return m_info; }
 
+    bool SetName(std::string const& name);
+
     // Handle client commands
-    void HandleRoster(WorldSession* session = NULL);          // NULL = broadcast
+    void HandleRoster(WorldSession* session);
     void HandleQuery(WorldSession* session);
     void HandleSetMOTD(WorldSession* session, std::string const& motd);
     void HandleSetInfo(WorldSession* session, std::string const& info);
@@ -666,7 +669,7 @@ public:
     void HandleSetLeader(WorldSession* session, std::string const& name);
     void HandleSetBankTabInfo(WorldSession* session, uint8 tabId, std::string const& name, std::string const& icon);
     void HandleSetMemberNote(WorldSession* session, std::string const& name, std::string const& note, bool officer);
-    void HandleSetRankInfo(WorldSession* session, uint8 rankId, std::string const& name, uint32 rights, uint32 moneyPerDay, GuildBankRightsAndSlotsVec rightsAndSlots);
+    void HandleSetRankInfo(WorldSession* session, uint8 rankId, std::string const& name, uint32 rights, uint32 moneyPerDay, const GuildBankRightsAndSlotsVec& rightsAndSlots);
     void HandleBuyBankTab(WorldSession* session, uint8 tabId);
     void HandleInviteMember(WorldSession* session, std::string const& name);
     void HandleAcceptMember(WorldSession* session);
@@ -725,7 +728,7 @@ public:
     // Members
     // Adds member to guild. If rankId == GUILD_RANK_NONE, lowest rank is assigned.
     bool AddMember(uint64 guid, uint8 rankId = GUILD_RANK_NONE);
-    void DeleteMember(uint64 guid, bool isDisbanding = false, bool isKicked = false);
+    void DeleteMember(uint64 guid, bool isDisbanding = false, bool isKicked = false, bool canDeleteGuild = false);
     bool ChangeMemberRank(uint64 guid, uint8 newRank);
 
     // Bank

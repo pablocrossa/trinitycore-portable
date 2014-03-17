@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -16,7 +16,10 @@
  */
 
 #include "AppenderFile.h"
-#include "Common.h"
+
+#if PLATFORM == PLATFORM_WINDOWS
+# include <Windows.h>
+#endif
 
 AppenderFile::AppenderFile(uint8 id, std::string const& name, LogLevel level, const char* _filename, const char* _logDir, const char* _mode, AppenderFlags _flags, uint64 fileSize):
     Appender(id, name, APPENDER_FILE, level, _flags),
@@ -28,9 +31,10 @@ AppenderFile::AppenderFile(uint8 id, std::string const& name, LogLevel level, co
     fileSize(0)
 {
     dynamicName = std::string::npos != filename.find("%s");
-    backup = _flags & APPENDER_FLAGS_MAKE_FILE_BACKUP;
+    backup = (_flags & APPENDER_FLAGS_MAKE_FILE_BACKUP) != 0;
 
-    logfile = !dynamicName ? OpenFile(_filename, _mode, mode == "w" && backup) : NULL;
+    if (!dynamicName)
+        logfile = OpenFile(_filename, _mode, mode == "w" && backup);
 }
 
 AppenderFile::~AppenderFile()
@@ -40,13 +44,21 @@ AppenderFile::~AppenderFile()
 
 void AppenderFile::_write(LogMessage const& message)
 {
-    bool exceedMaxSize = maxFileSize > 0 && (fileSize + message.Size()) > maxFileSize;
+    bool exceedMaxSize = maxFileSize > 0 && (fileSize.value() + message.Size()) > maxFileSize;
 
     if (dynamicName)
     {
         char namebuf[TRINITY_PATH_MAX];
         snprintf(namebuf, TRINITY_PATH_MAX, filename.c_str(), message.param1.c_str());
-        logfile = OpenFile(namebuf, mode, backup || exceedMaxSize);
+        // always use "a" with dynamic name otherwise it could delete the log we wrote in last _write() call
+        FILE* file = OpenFile(namebuf, "a", backup || exceedMaxSize);
+        if (!file)
+            return;
+        fprintf(file, "%s%s", message.prefix.c_str(), message.text.c_str());
+        fflush(file);
+        fileSize += uint64(message.Size());
+        fclose(file);
+        return;
     }
     else if (exceedMaxSize)
         logfile = OpenFile(filename, "w", true);
@@ -56,10 +68,7 @@ void AppenderFile::_write(LogMessage const& message)
 
     fprintf(logfile, "%s%s", message.prefix.c_str(), message.text.c_str());
     fflush(logfile);
-    fileSize += message.Size();
-
-    if (dynamicName)
-        CloseFile();
+    fileSize += uint64(message.Size());
 }
 
 FILE* AppenderFile::OpenFile(std::string const &filename, std::string const &mode, bool backup)

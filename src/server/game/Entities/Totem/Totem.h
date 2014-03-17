@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class Totem : public Minion
 {
     public:
         Totem(SummonPropertiesEntry const* properties, Unit* owner);
-        virtual ~Totem() {}
+        virtual ~Totem() { }
         void Update(uint32 time);
         void InitStats(uint32 duration);
         void InitSummon();
@@ -48,12 +48,12 @@ class Totem : public Minion
 
         bool UpdateStats(Stats /*stat*/) { return true; }
         bool UpdateAllStats() { return true; }
-        void UpdateResistances(uint32 /*school*/) {}
-        void UpdateArmor() {}
-        void UpdateMaxHealth() {}
-        void UpdateMaxPower(Powers /*power*/) {}
-        void UpdateAttackPowerAndDamage(bool /*ranged*/) {}
-        void UpdateDamagePhysical(WeaponAttackType /*attType*/) {}
+        void UpdateResistances(uint32 /*school*/) { }
+        void UpdateArmor() { }
+        void UpdateMaxHealth() { }
+        void UpdateMaxPower(Powers /*power*/) { }
+        void UpdateAttackPowerAndDamage(bool /*ranged*/) { }
+        void UpdateDamagePhysical(WeaponAttackType /*attType*/) OVERRIDE { }
 
         bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const;
 

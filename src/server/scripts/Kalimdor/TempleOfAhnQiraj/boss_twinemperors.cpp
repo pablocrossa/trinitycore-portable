@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ struct boss_twinemperorsAI : public ScriptedAI
     uint32 AfterTeleportTimer;
     bool DontYellWhenDead;
     uint32 Abuse_Bug_Timer, BugsTimer;
-    bool tspellcasted;
+    bool tspellcast;
     uint32 EnrageTimer;
 
     virtual bool IAmVeklor() = 0;
@@ -92,7 +92,7 @@ struct boss_twinemperorsAI : public ScriptedAI
         Heal_Timer = 0;                                     // first heal immediately when they get close together
         Teleport_Timer = TELEPORTTIME;
         AfterTeleport = false;
-        tspellcasted = false;
+        tspellcast = false;
         AfterTeleportTimer = 0;
         Abuse_Bug_Timer = urand(10000, 17000);
         BugsTimer = 2000;
@@ -103,13 +103,10 @@ struct boss_twinemperorsAI : public ScriptedAI
 
     Creature* GetOtherBoss()
     {
-        if (instance)
-            return Unit::GetCreature(*me, instance->GetData64(IAmVeklor() ? DATA_VEKNILASH : DATA_VEKLOR));
-        else
-            return NULL;
+        return Unit::GetCreature(*me, instance->GetData64(IAmVeklor() ? DATA_VEKNILASH : DATA_VEKLOR));
     }
 
-    void DamageTaken(Unit* /*done_by*/, uint32 &damage)
+    void DamageTaken(Unit* /*done_by*/, uint32 &damage) OVERRIDE
     {
         Unit* pOtherBoss = GetOtherBoss();
         if (pOtherBoss)
@@ -126,7 +123,7 @@ struct boss_twinemperorsAI : public ScriptedAI
         }
     }
 
-    void JustDied(Unit* /*killer*/)
+    void JustDied(Unit* /*killer*/) OVERRIDE
     {
         Creature* pOtherBoss = GetOtherBoss();
         if (pOtherBoss)
@@ -140,12 +137,12 @@ struct boss_twinemperorsAI : public ScriptedAI
             DoPlaySoundToSet(me, IAmVeklor() ? SOUND_VL_DEATH : SOUND_VN_DEATH);
     }
 
-    void KilledUnit(Unit* /*victim*/)
+    void KilledUnit(Unit* /*victim*/) OVERRIDE
     {
         DoPlaySoundToSet(me, IAmVeklor() ? SOUND_VL_KILL : SOUND_VN_KILL);
     }
 
-    void EnterCombat(Unit* who)
+    void EnterCombat(Unit* who) OVERRIDE
     {
         DoZoneInCombat();
         Creature* pOtherBoss = GetOtherBoss();
@@ -154,7 +151,7 @@ struct boss_twinemperorsAI : public ScriptedAI
             /// @todo we should activate the other boss location so he can start attackning even if nobody
             // is near I dont know how to do that
             ScriptedAI* otherAI = CAST_AI(ScriptedAI, pOtherBoss->AI());
-            if (!pOtherBoss->isInCombat())
+            if (!pOtherBoss->IsInCombat())
             {
                 DoPlaySoundToSet(me, IAmVeklor() ? SOUND_VL_AGGRO : SOUND_VN_AGGRO);
                 otherAI->AttackStart(who);
@@ -163,7 +160,7 @@ struct boss_twinemperorsAI : public ScriptedAI
         }
     }
 
-    void SpellHit(Unit* caster, const SpellInfo* entry)
+    void SpellHit(Unit* caster, const SpellInfo* entry) OVERRIDE
     {
         if (caster == me)
             return;
@@ -210,9 +207,6 @@ struct boss_twinemperorsAI : public ScriptedAI
 
     void TeleportToMyBrother()
     {
-        if (!instance)
-            return;
-
         Teleport_Timer = TELEPORTTIME;
 
         if (IAmVeklor())
@@ -243,21 +237,21 @@ struct boss_twinemperorsAI : public ScriptedAI
         me->AddUnitState(UNIT_STATE_STUNNED);
         AfterTeleport = true;
         AfterTeleportTimer = 2000;
-        tspellcasted = false;
+        tspellcast = false;
     }
 
     bool TryActivateAfterTTelep(uint32 diff)
     {
         if (AfterTeleport)
         {
-            if (!tspellcasted)
+            if (!tspellcast)
             {
                 me->ClearUnitState(UNIT_STATE_STUNNED);
                 DoCast(me, SPELL_TWIN_TELEPORT);
                 me->AddUnitState(UNIT_STATE_STUNNED);
             }
 
-            tspellcasted = true;
+            tspellcast = true;
 
             if (AfterTeleportTimer <= diff)
             {
@@ -292,12 +286,13 @@ struct boss_twinemperorsAI : public ScriptedAI
         }
     }
 
-    void MoveInLineOfSight(Unit* who)
+    void MoveInLineOfSight(Unit* who) OVERRIDE
+
     {
-        if (!who || me->getVictim())
+        if (!who || me->GetVictim())
             return;
 
-        if (me->canCreatureAttack(who))
+        if (me->CanCreatureAttack(who))
         {
             float attackRadius = me->GetAttackDistance(who);
             if (attackRadius < PULL_RANGE)
@@ -377,7 +372,7 @@ struct boss_twinemperorsAI : public ScriptedAI
     {
         if (EnrageTimer <= diff)
         {
-            if (!me->IsNonMeleeSpellCasted(true))
+            if (!me->IsNonMeleeSpellCast(true))
             {
                 DoCast(me, SPELL_BERSERK);
                 EnrageTimer = 60*60000;
@@ -391,15 +386,15 @@ class boss_veknilash : public CreatureScript
 public:
     boss_veknilash() : CreatureScript("boss_veknilash") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_veknilashAI (creature);
+        return GetInstanceAI<boss_veknilashAI>(creature);
     }
 
     struct boss_veknilashAI : public boss_twinemperorsAI
     {
         bool IAmVeklor() {return false;}
-        boss_veknilashAI(Creature* creature) : boss_twinemperorsAI(creature) {}
+        boss_veknilashAI(Creature* creature) : boss_twinemperorsAI(creature) { }
 
         uint32 UpperCut_Timer;
         uint32 UnbalancingStrike_Timer;
@@ -410,7 +405,7 @@ public:
 
         Creature* Summoned;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             TwinReset();
             UpperCut_Timer = urand(14000, 29000);
@@ -429,7 +424,7 @@ public:
             target->SetFullHealth();
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -441,7 +436,7 @@ public:
             //UnbalancingStrike_Timer
             if (UnbalancingStrike_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_UNBALANCING_STRIKE);
+                DoCastVictim(SPELL_UNBALANCING_STRIKE);
                 UnbalancingStrike_Timer = 8000+rand()%12000;
             } else UnbalancingStrike_Timer -= diff;
 
@@ -477,15 +472,15 @@ class boss_veklor : public CreatureScript
 public:
     boss_veklor() : CreatureScript("boss_veklor") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_veklorAI (creature);
+        return GetInstanceAI<boss_veklorAI>(creature);
     }
 
     struct boss_veklorAI : public boss_twinemperorsAI
     {
         bool IAmVeklor() {return true;}
-        boss_veklorAI(Creature* creature) : boss_twinemperorsAI(creature) {}
+        boss_veklorAI(Creature* creature) : boss_twinemperorsAI(creature) { }
 
         uint32 ShadowBolt_Timer;
         uint32 Blizzard_Timer;
@@ -497,7 +492,7 @@ public:
 
         Creature* Summoned;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             TwinReset();
             ShadowBolt_Timer = 0;
@@ -507,8 +502,6 @@ public:
 
             //Added. Can be removed if its included in DB.
             me->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, true);
-            me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, 0);
-            me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, 0);
         }
 
         void CastSpellOnBug(Creature* target)
@@ -518,7 +511,7 @@ public:
             target->SetFullHealth();
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -535,10 +528,10 @@ public:
             //ShadowBolt_Timer
             if (ShadowBolt_Timer <= diff)
             {
-                if (!me->IsWithinDist(me->getVictim(), 45.0f))
-                    me->GetMotionMaster()->MoveChase(me->getVictim(), VEKLOR_DIST, 0);
+                if (!me->IsWithinDist(me->GetVictim(), 45.0f))
+                    me->GetMotionMaster()->MoveChase(me->GetVictim(), VEKLOR_DIST, 0);
                 else
-                    DoCast(me->getVictim(), SPELL_SHADOWBOLT);
+                    DoCastVictim(SPELL_SHADOWBOLT);
                 ShadowBolt_Timer = 2000;
             } else ShadowBolt_Timer -= diff;
 
@@ -579,7 +572,7 @@ public:
             //DoMeleeAttackIfReady();
         }
 
-        void AttackStart(Unit* who)
+        void AttackStart(Unit* who) OVERRIDE
         {
             if (!who)
                 return;

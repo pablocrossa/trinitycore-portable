@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ class AuraApplication
         uint8 GetEffectMask() const { return _flags & (AFLAG_EFF_INDEX_0 | AFLAG_EFF_INDEX_1 | AFLAG_EFF_INDEX_2); }
         bool HasEffect(uint8 effect) const { ASSERT(effect < MAX_SPELL_EFFECTS);  return _flags & (1<<effect); }
         bool IsPositive() const { return _flags & AFLAG_POSITIVE; }
-        bool IsSelfcasted() const { return _flags & AFLAG_CASTER; }
+        bool IsSelfcast() const { return _flags & AFLAG_CASTER; }
         uint8 GetEffectsToApply() const { return _effectsToApply; }
 
         void SetRemoveMode(AuraRemoveMode mode) { _removeMode = mode; }
@@ -165,8 +165,9 @@ class Aura
         bool IsRemoved() const { return m_isRemoved; }
         bool CanBeSentToClient() const;
         // Single cast aura helpers
-        bool IsSingleTarget() const {return m_isSingleTarget;}
-        void SetIsSingleTarget(bool val) { m_isSingleTarget = val;}
+        bool IsSingleTarget() const {return m_isSingleTarget; }
+        bool IsSingleTargetWith(Aura const* aura) const;
+        void SetIsSingleTarget(bool val) { m_isSingleTarget = val; }
         void UnregisterSingleTarget();
         int32 CalcDispelChance(Unit* auraTarget, bool offensive) const;
 
@@ -228,10 +229,12 @@ class Aura
         // Spell Proc Hooks
         bool CallScriptCheckProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
         bool CallScriptPrepareProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
-        void CallScriptProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
+        bool CallScriptProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
         void CallScriptAfterProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
         bool CallScriptEffectProcHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, ProcEventInfo& eventInfo);
         void CallScriptAfterEffectProcHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, ProcEventInfo& eventInfo);
+
+        AuraScript* GetScriptByName(std::string const& scriptName) const;
 
         std::list<AuraScript*> m_loadedScripts;
     private:

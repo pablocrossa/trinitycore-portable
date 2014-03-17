@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -651,9 +651,9 @@ struct CharTitlesEntry
 {
     uint32  ID;                                             // 0, title ids, for example in Quest::GetCharTitleId()
     //uint32      unk1;                                     // 1 flags?
-    char*   name[16];                                       // 2-17
+    char*   nameMale[16];                                   // 2-17
                                                             // 18 string flag, unused
-    //char*       name2[16];                                // 19-34, unused
+    char*   nameFemale[16];                                 // 19-34
                                                             // 35 string flag, unused
     uint32  bit_index;                                      // 36 used in PLAYER_CHOSEN_TITLE and 1<<index in PLAYER__FIELD_KNOWN_TITLES
 };
@@ -674,7 +674,7 @@ struct ChrClassesEntry
                                                             // 1, unused
     uint32  powerType;                                      // 2
                                                             // 3-4, unused
-    //char*       name[16];                                 // 5-20 unused
+    char*   name[16];                                       // 5-20 unused
                                                             // 21 string flag, unused
     //char*       nameFemale[16];                           // 21-36 unused, if different from base (male) case
                                                             // 37 string flag, unused
@@ -1270,7 +1270,7 @@ struct MailTemplateEntry
     uint32      ID;                                         // 0
     //char*       subject[16];                              // 1-16
                                                             // 17 name flags, unused
-    char*       content[16];                              // 18-33
+    char*       content[16];                                // 18-33
 };
 
 struct MapEntry
@@ -1675,6 +1675,12 @@ struct SpellCastTimesEntry
     //int32     MinCastTime;                                // 3 unsure
 };
 
+struct SpellCategoryEntry
+{
+    uint32 Id;
+    uint32 Flags;
+};
+
 struct SpellDifficultyEntry
 {
     uint32     ID;                                          // 0
@@ -1875,6 +1881,28 @@ struct TotemCategoryEntry
     uint32    categoryMask;                                 // 19 (compatibility mask for same type: different for totems, compatible from high to low for rods)
 };
 
+struct TransportAnimationEntry
+{
+    //uint32  Id;
+    uint32  TransportEntry;
+    uint32  TimeSeg;
+    float   X;
+    float   Y;
+    float   Z;
+    //uint32  MovementId;
+};
+
+struct TransportRotationEntry
+{
+    //uint32  Id;
+    uint32  TransportEntry;
+    uint32  TimeSeg;
+    float   X;
+    float   Y;
+    float   Z;
+    float   W;
+};
+
 #define MAX_VEHICLE_SEATS 8
 
 struct VehicleEntry
@@ -1966,9 +1994,9 @@ struct VehicleSeatEntry
 
     bool CanEnterOrExit() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_ENTER_OR_EXIT; }
     bool CanSwitchFromSeat() const { return m_flags & VEHICLE_SEAT_FLAG_CAN_SWITCH; }
-    bool IsUsableByOverride() const { return (m_flags & VEHICLE_SEAT_FLAG_UNCONTROLLED)
+    bool IsUsableByOverride() const { return (m_flags & (VEHICLE_SEAT_FLAG_UNCONTROLLED | VEHICLE_SEAT_FLAG_UNK18)
                                     || (m_flagsB & (VEHICLE_SEAT_FLAG_B_USABLE_FORCED | VEHICLE_SEAT_FLAG_B_USABLE_FORCED_2 |
-                                        VEHICLE_SEAT_FLAG_B_USABLE_FORCED_3 | VEHICLE_SEAT_FLAG_B_USABLE_FORCED_4)); }
+                                        VEHICLE_SEAT_FLAG_B_USABLE_FORCED_3 | VEHICLE_SEAT_FLAG_B_USABLE_FORCED_4))); }
     bool IsEjectable() const { return m_flagsB & VEHICLE_SEAT_FLAG_B_EJECTABLE; }
 };
 
@@ -2073,8 +2101,8 @@ struct WorldStateUI
 // Structures not used for casting to loaded DBC data and not required then packing
 struct MapDifficulty
 {
-    MapDifficulty() : resetTime(0), maxPlayers(0), hasErrorMessage(false) {}
-    MapDifficulty(uint32 _resetTime, uint32 _maxPlayers, bool _hasErrorMessage) : resetTime(_resetTime), maxPlayers(_maxPlayers), hasErrorMessage(_hasErrorMessage) {}
+    MapDifficulty() : resetTime(0), maxPlayers(0), hasErrorMessage(false) { }
+    MapDifficulty(uint32 _resetTime, uint32 _maxPlayers, bool _hasErrorMessage) : resetTime(_resetTime), maxPlayers(_maxPlayers), hasErrorMessage(_hasErrorMessage) { }
 
     uint32 resetTime;
     uint32 maxPlayers;
@@ -2083,8 +2111,8 @@ struct MapDifficulty
 
 struct TalentSpellPos
 {
-    TalentSpellPos() : talent_id(0), rank(0) {}
-    TalentSpellPos(uint16 _talent_id, uint8 _rank) : talent_id(_talent_id), rank(_rank) {}
+    TalentSpellPos() : talent_id(0), rank(0) { }
+    TalentSpellPos(uint16 _talent_id, uint8 _rank) : talent_id(_talent_id), rank(_rank) { }
 
     uint16 talent_id;
     uint8  rank;
@@ -2094,8 +2122,8 @@ typedef std::map<uint32, TalentSpellPos> TalentSpellPosMap;
 
 struct TaxiPathBySourceAndDestination
 {
-    TaxiPathBySourceAndDestination() : ID(0), price(0) {}
-    TaxiPathBySourceAndDestination(uint32 _id, uint32 _price) : ID(_id), price(_price) {}
+    TaxiPathBySourceAndDestination() : ID(0), price(0) { }
+    TaxiPathBySourceAndDestination(uint32 _id, uint32 _price) : ID(_id), price(_price) { }
 
     uint32    ID;
     uint32    price;
@@ -2105,8 +2133,8 @@ typedef std::map<uint32, TaxiPathSetForSource> TaxiPathSetBySource;
 
 struct TaxiPathNodePtr
 {
-    TaxiPathNodePtr() : i_ptr(NULL) {}
-    TaxiPathNodePtr(TaxiPathNodeEntry const* ptr) : i_ptr(ptr) {}
+    TaxiPathNodePtr() : i_ptr(NULL) { }
+    TaxiPathNodePtr(TaxiPathNodeEntry const* ptr) : i_ptr(ptr) { }
     TaxiPathNodeEntry const* i_ptr;
     operator TaxiPathNodeEntry const& () const { return *i_ptr; }
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -41,7 +41,7 @@ class instance_pit_of_saron : public InstanceMapScript
         {
             instance_pit_of_saron_InstanceScript(Map* map) : InstanceScript(map)
             {
-                SetBossNumber(MAX_ENCOUNTER);
+                SetBossNumber(EncounterCount);
                 LoadDoorData(Doors);
                 _garfrostGUID = 0;
                 _krickGUID = 0;
@@ -53,19 +53,19 @@ class instance_pit_of_saron : public InstanceMapScript
                 _teamInInstance = 0;
             }
 
-            void OnPlayerEnter(Player* player)
+            void OnPlayerEnter(Player* player) OVERRIDE
             {
                 if (!_teamInInstance)
                     _teamInInstance = player->GetTeam();
             }
 
-            void OnCreatureCreate(Creature* creature)
+            void OnCreatureCreate(Creature* creature) OVERRIDE
             {
                 if (!_teamInInstance)
                 {
-                    Map::PlayerList const &players = instance->GetPlayers();
+                    Map::PlayerList const& players = instance->GetPlayers();
                     if (!players.isEmpty())
-                        if (Player* player = players.begin()->getSource())
+                        if (Player* player = players.begin()->GetSource())
                             _teamInInstance = player->GetTeam();
                 }
 
@@ -164,7 +164,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 }
             }
 
-            void OnGameObjectCreate(GameObject* go)
+            void OnGameObjectCreate(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
@@ -175,7 +175,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 }
             }
 
-            void OnGameObjectRemove(GameObject* go)
+            void OnGameObjectRemove(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
@@ -186,7 +186,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 }
             }
 
-            bool SetBossState(uint32 type, EncounterState state)
+            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
             {
                 if (!InstanceScript::SetBossState(type, state))
                     return false;
@@ -224,7 +224,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 return true;
             }
 
-            uint32 GetData(uint32 type) const
+            uint32 GetData(uint32 type) const OVERRIDE
             {
                 switch (type)
                 {
@@ -237,7 +237,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 return 0;
             }
 
-            uint64 GetData64(uint32 type) const
+            uint64 GetData64(uint32 type) const OVERRIDE
             {
                 switch (type)
                 {
@@ -264,7 +264,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 return 0;
             }
 
-            std::string GetSaveData()
+            std::string GetSaveData() OVERRIDE
             {
                 OUT_SAVE_INST_DATA;
 
@@ -275,7 +275,7 @@ class instance_pit_of_saron : public InstanceMapScript
                 return saveStream.str();
             }
 
-            void Load(const char* in)
+            void Load(const char* in) OVERRIDE
             {
                 if (!in)
                 {
@@ -292,7 +292,7 @@ class instance_pit_of_saron : public InstanceMapScript
 
                 if (dataHead1 == 'P' && dataHead2 == 'S')
                 {
-                    for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+                    for (uint8 i = 0; i < EncounterCount; ++i)
                     {
                         uint32 tmpState;
                         loadStream >> tmpState;
@@ -322,7 +322,7 @@ class instance_pit_of_saron : public InstanceMapScript
             uint32 _teamInInstance;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
         {
             return new instance_pit_of_saron_InstanceScript(map);
         }

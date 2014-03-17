@@ -23,10 +23,6 @@
 
 namespace Movement{
 
-extern float computeFallTime(float path_length, bool isSafeFall);
-extern float computeFallElevation(float time_passed, bool isSafeFall, float start_velocy);
-extern float computeFallElevation(float time_passed);
-
 Location MoveSpline::ComputePosition() const
 {
     ASSERT(Initialized());
@@ -84,12 +80,9 @@ void MoveSpline::computeParabolicElevation(float& el) const
 
 void MoveSpline::computeFallElevation(float& el) const
 {
-    float z_now = spline.getPoint(spline.first()).z - Movement::computeFallElevation(MSToSec(time_passed));
+    float z_now = spline.getPoint(spline.first()).z - Movement::computeFallElevation(MSToSec(time_passed), false);
     float final_z = FinalDestination().z;
-    if (z_now < final_z)
-        el = final_z;
-    else
-        el = z_now;
+    el = std::max(z_now, final_z);
 }
 
 inline uint32 computeDuration(float length, float velocity)
@@ -99,7 +92,7 @@ inline uint32 computeDuration(float length, float velocity)
 
 struct FallInitializer
 {
-    FallInitializer(float _start_elevation) : start_elevation(_start_elevation) {}
+    FallInitializer(float _start_elevation) : start_elevation(_start_elevation) { }
     float start_elevation;
     inline int32 operator()(Spline<int32>& s, int32 i)
     {
@@ -113,7 +106,7 @@ enum{
 
 struct CommonInitializer
 {
-    CommonInitializer(float _velocity) : velocityInv(1000.f/_velocity), time(minimal_duration) {}
+    CommonInitializer(float _velocity) : velocityInv(1000.f/_velocity), time(minimal_duration) { }
     float velocityInv;
     int32 time;
     inline int32 operator()(Spline<int32>& s, int32 i)
@@ -154,13 +147,13 @@ void MoveSpline::init_spline(const MoveSplineInitArgs& args)
     /// @todo what to do in such cases? problem is in input data (all points are at same coords)
     if (spline.length() < minimal_duration)
     {
-        sLog->outError(LOG_FILTER_GENERAL, "MoveSpline::init_spline: zero length spline, wrong input data?");
+        TC_LOG_ERROR("misc", "MoveSpline::init_spline: zero length spline, wrong input data?");
         spline.set_length(spline.last(), spline.isCyclic() ? 1000 : 1);
     }
     point_Idx = spline.first();
 }
 
-void MoveSpline::Initialize(const MoveSplineInitArgs& args)
+void MoveSpline::Initialize(MoveSplineInitArgs const& args)
 {
     splineflags = args.flags;
     facing = args.facing;
@@ -168,10 +161,16 @@ void MoveSpline::Initialize(const MoveSplineInitArgs& args)
     point_Idx_offset = args.path_Idx_offset;
     initialOrientation = args.initialOrientation;
 
-    onTransport = false;
     time_passed = 0;
     vertical_acceleration = 0.f;
     effect_start_time = 0;
+
+    // Check if its a stop spline
+    if (args.flags.done)
+    {
+        spline.clear();
+        return;
+    }
 
     init_spline(args);
 
@@ -189,7 +188,8 @@ void MoveSpline::Initialize(const MoveSplineInitArgs& args)
 }
 
 MoveSpline::MoveSpline() : m_Id(0), time_passed(0),
-    vertical_acceleration(0.f), initialOrientation(0.f), effect_start_time(0), point_Idx(0), point_Idx_offset(0)
+    vertical_acceleration(0.f), initialOrientation(0.f), effect_start_time(0), point_Idx(0), point_Idx_offset(0),
+    onTransport(false)
 {
     splineflags.done = true;
 }
@@ -201,7 +201,7 @@ bool MoveSplineInitArgs::Validate(Unit* unit) const
 #define CHECK(exp) \
     if (!(exp))\
     {\
-        sLog->outError(LOG_FILTER_GENERAL, "MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUIDLow() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
+        TC_LOG_ERROR("misc", "MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUIDLow() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
         return false;\
     }
     CHECK(path.size() > 1);
@@ -228,7 +228,7 @@ bool MoveSplineInitArgs::_checkPathBounds() const
             offset = path[i] - middle;
             if (fabs(offset.x) >= MAX_OFFSET || fabs(offset.y) >= MAX_OFFSET || fabs(offset.z) >= MAX_OFFSET)
             {
-                sLog->outError(LOG_FILTER_GENERAL, "MoveSplineInitArgs::_checkPathBounds check failed");
+                TC_LOG_ERROR("misc", "MoveSplineInitArgs::_checkPathBounds check failed");
                 return false;
             }
         }
@@ -266,7 +266,7 @@ MoveSpline::UpdateResult MoveSpline::_updateState(int32& ms_time_diff)
             {
                 point_Idx = spline.first();
                 time_passed = time_passed % Duration();
-                result = Result_NextSegment;
+                result = Result_NextCycle;
             }
             else
             {

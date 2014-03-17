@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -84,9 +84,9 @@ class boss_shade_of_aran : public CreatureScript
 public:
     boss_shade_of_aran() : CreatureScript("boss_shade_of_aran") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_aranAI (creature);
+        return GetInstanceAI<boss_aranAI>(creature);
     }
 
     struct boss_aranAI : public ScriptedAI
@@ -123,7 +123,7 @@ public:
         bool Drinking;
         bool DrinkInturrupted;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             SecondarySpellTimer = 5000;
             NormalCastTimer = 0;
@@ -147,39 +147,30 @@ public:
             Drinking = false;
             DrinkInturrupted = false;
 
-            if (instance)
-            {
-                // Not in progress
-                instance->SetData(TYPE_ARAN, NOT_STARTED);
-                instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), true);
-            }
+            // Not in progress
+            instance->SetData(TYPE_ARAN, NOT_STARTED);
+            instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), true);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_KILL);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance)
-            {
-                instance->SetData(TYPE_ARAN, DONE);
-                instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), true);
-            }
+            instance->SetData(TYPE_ARAN, DONE);
+            instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), true);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
-            if (instance)
-            {
-                instance->SetData(TYPE_ARAN, IN_PROGRESS);
-                instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), false);
-            }
+            instance->SetData(TYPE_ARAN, IN_PROGRESS);
+            instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), false);
         }
 
         void FlameWreathEffect()
@@ -195,7 +186,7 @@ public:
             {
                 Unit* target = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                 //only on alive players
-                if (target && target->isAlive() && target->GetTypeId() == TYPEID_PLAYER)
+                if (target && target->IsAlive() && target->GetTypeId() == TYPEID_PLAYER)
                     targets.push_back(target);
             }
 
@@ -217,7 +208,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -226,11 +217,8 @@ public:
             {
                 if (CloseDoorTimer <= diff)
                 {
-                    if (instance)
-                    {
-                        instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), false);
-                        CloseDoorTimer = 0;
-                    }
+                    instance->HandleGameObject(instance->GetData64(DATA_GO_LIBRARY_DOOR), false);
+                    CloseDoorTimer = 0;
                 } else CloseDoorTimer -= diff;
             }
 
@@ -305,7 +293,7 @@ public:
             //Normal casts
             if (NormalCastTimer <= diff)
             {
-                if (!me->IsNonMeleeSpellCasted(false))
+                if (!me->IsNonMeleeSpellCast(false))
                 {
                     Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true);
                     if (!target)
@@ -424,7 +412,7 @@ public:
                 {
                     if (Creature* unit = me->SummonCreature(CREATURE_WATER_ELEMENTAL, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 90000))
                     {
-                        unit->Attack(me->getVictim(), true);
+                        unit->Attack(me->GetVictim(), true);
                         unit->setFaction(me->getFaction());
                     }
                 }
@@ -438,7 +426,7 @@ public:
                 {
                     if (Creature* unit = me->SummonCreature(CREATURE_SHADOW_OF_ARAN, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000))
                     {
-                        unit->Attack(me->getVictim(), true);
+                        unit->Attack(me->GetVictim(), true);
                         unit->setFaction(me->getFaction());
                     }
                 }
@@ -478,18 +466,18 @@ public:
                 DoMeleeAttackIfReady();
         }
 
-        void DamageTaken(Unit* /*pAttacker*/, uint32 &damage)
+        void DamageTaken(Unit* /*pAttacker*/, uint32 &damage) OVERRIDE
         {
             if (!DrinkInturrupted && Drinking && damage)
                 DrinkInturrupted = true;
         }
 
-        void SpellHit(Unit* /*pAttacker*/, const SpellInfo* Spell)
+        void SpellHit(Unit* /*pAttacker*/, const SpellInfo* Spell) OVERRIDE
         {
-            //We only care about interrupt effects and only if they are durring a spell currently being casted
+            //We only care about interrupt effects and only if they are durring a spell currently being cast
             if ((Spell->Effects[0].Effect != SPELL_EFFECT_INTERRUPT_CAST &&
                 Spell->Effects[1].Effect != SPELL_EFFECT_INTERRUPT_CAST &&
-                Spell->Effects[2].Effect != SPELL_EFFECT_INTERRUPT_CAST) || !me->IsNonMeleeSpellCasted(false))
+                Spell->Effects[2].Effect != SPELL_EFFECT_INTERRUPT_CAST) || !me->IsNonMeleeSpellCast(false))
                 return;
 
             //Interrupt effect
@@ -508,37 +496,37 @@ public:
     };
 };
 
-class mob_aran_elemental : public CreatureScript
+class npc_aran_elemental : public CreatureScript
 {
 public:
-    mob_aran_elemental() : CreatureScript("mob_aran_elemental") { }
+    npc_aran_elemental() : CreatureScript("npc_aran_elemental") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new water_elementalAI (creature);
+        return new water_elementalAI(creature);
     }
 
     struct water_elementalAI : public ScriptedAI
     {
-        water_elementalAI(Creature* creature) : ScriptedAI(creature) {}
+        water_elementalAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 CastTimer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             CastTimer = 2000 + (rand()%3000);
         }
 
-        void EnterCombat(Unit* /*who*/) {}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
 
             if (CastTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_WATERBOLT);
+                DoCastVictim(SPELL_WATERBOLT);
                 CastTimer = urand(2000, 5000);
             } else CastTimer -= diff;
         }
@@ -548,5 +536,5 @@ public:
 void AddSC_boss_shade_of_aran()
 {
     new boss_shade_of_aran();
-    new mob_aran_elemental();
+    new npc_aran_elemental();
 }

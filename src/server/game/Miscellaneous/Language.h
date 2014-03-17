@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -88,38 +88,28 @@ enum TrinityStrings
     LANG_IMPROPER_VALUE                 = 62,
     LANG_RBAC_WRONG_PARAMETER_ID        = 63,
     LANG_RBAC_WRONG_PARAMETER_REALM     = 64,
-    LANG_RBAC_GROUP_IN_LIST             = 65,
-    LANG_RBAC_GROUP_NOT_IN_LIST         = 66,
-    LANG_RBAC_GROUP_ADDED               = 67,
-    LANG_RBAC_GROUP_REMOVED             = 68,
-    LANG_RBAC_GROUP_LIST_HEADER         = 69,
+    LANG_RBAC_LIST_HEADER_GRANTED       = 65,
+    LANG_RBAC_LIST_HEADER_DENIED        = 66,
+    LANG_RBAC_LIST_HEADER_BY_SEC_LEVEL  = 67,
+    LANG_RBAC_LIST_PERMISSIONS_HEADER   = 68,
+    LANG_RBAC_LIST_PERMS_LINKED_HEADER  = 69,
     LANG_RBAC_LIST_EMPTY                = 70,
     LANG_RBAC_LIST_ELEMENT              = 71,
-    LANG_RBAC_ROLE_GRANTED_IN_LIST      = 72,
-    LANG_RBAC_ROLE_GRANTED_IN_DENIED_LIST = 73,
-    LANG_RBAC_ROLE_GRANTED              = 74,
-    LANG_RBAC_ROLE_DENIED_IN_LIST       = 75,
-    LANG_RBAC_ROLE_DENIED_IN_GRANTED_LIST = 76,
-    LANG_RBAC_ROLE_DENIED               = 77,
-    LANG_RBAC_ROLE_REVOKED              = 78,
-    LANG_RBAC_ROLE_REVOKED_NOT_IN_LIST  = 79,
-    LANG_RBAC_ROLE_LIST_HEADER_GRANTED  = 80,
-    LANG_RBAC_ROLE_LIST_HEADER_DENIED   = 81,
-    LANG_RBAC_PERM_GRANTED_IN_LIST      = 82,
-    LANG_RBAC_PERM_GRANTED_IN_DENIED_LIST = 83,
-    LANG_RBAC_PERM_GRANTED              = 84,
-    LANG_RBAC_PERM_DENIED_IN_LIST       = 85,
-    LANG_RBAC_PERM_DENIED_IN_GRANTED_LIST = 86,
-    LANG_RBAC_PERM_DENIED               = 87,
-    LANG_RBAC_PERM_REVOKED              = 88,
-    LANG_RBAC_PERM_REVOKED_NOT_IN_LIST  = 89,
-    LANG_RBAC_PERM_LIST_HEADER_GRANTED  = 90,
-    LANG_RBAC_PERM_LIST_HEADER_DENIED   = 91,
-    LANG_RBAC_PERM_LIST_GLOBAL          = 92,
-    LANG_RBAC_LIST_GROUPS_HEADER        = 93,
-    LANG_RBAC_LIST_ROLES_HEADER         = 94,
-    LANG_RBAC_LIST_PERMISSIONS_HEADER   = 95,
-    // Room for more level 0            96-99 not used
+    LANG_RBAC_PERM_GRANTED_IN_LIST      = 72,
+    LANG_RBAC_PERM_GRANTED_IN_DENIED_LIST = 73,
+    LANG_RBAC_PERM_GRANTED              = 74,
+    LANG_RBAC_PERM_DENIED_IN_LIST       = 75,
+    LANG_RBAC_PERM_DENIED_IN_GRANTED_LIST = 76,
+    LANG_RBAC_PERM_DENIED               = 77,
+    LANG_RBAC_PERM_REVOKED              = 78,
+    LANG_RBAC_PERM_REVOKED_NOT_IN_LIST  = 79,
+    // Free 80 - 95
+
+
+    LANG_GUILD_RENAME_ALREADY_EXISTS    = 96,
+    LANG_GUILD_RENAME_DONE              = 97,
+    LANG_RENAME_PLAYER_ALREADY_EXISTS   = 98,
+    LANG_RENAME_PLAYER_WITH_NEW_NAME    = 99,
 
     // level 1 chat
     LANG_GLOBAL_NOTIFY                  = 100,
@@ -196,7 +186,7 @@ enum TrinityStrings
     LANG_COMMAND_TELE_NOTFOUND          = 164,
     LANG_COMMAND_TELE_PARAMETER         = 165,
     LANG_COMMAND_TELE_NOLOCATION        = 166,
-    //                                    167               // not used
+    LANG_RESERVED_NAME                  = 167,
     LANG_COMMAND_TELE_LOCATION          = 168,
 
     LANG_MAIL_SENT                      = 169,
@@ -206,7 +196,9 @@ enum TrinityStrings
     LANG_YOU_CHANGE_RUNIC_POWER         = 173,
     LANG_YOURS_RUNIC_POWER_CHANGED      = 174,
     LANG_LIQUID_STATUS                  = 175,
-    // Room for more level 1              176-199 not used
+    LANG_INVALID_GAMEOBJECT_TYPE        = 176,
+    LANG_GAMEOBJECT_DAMAGED             = 177,
+    // Room for more level 1              178-199 not used
 
     // level 2 chat
     LANG_NO_SELECTION                   = 200,
@@ -439,7 +431,7 @@ enum TrinityStrings
     LANG_COMMAND_GRAVEYARDALRLINKED     = 450,
     LANG_COMMAND_GRAVEYARDLINKED        = 451,
     LANG_COMMAND_GRAVEYARDWRONGZONE     = 452,
-    //                                  = 453, see LANG_PINFO_BAN
+    //                                  = 453, see LANG_PINFO_PLAYER
     LANG_COMMAND_GRAVEYARDERROR         = 454,
     LANG_COMMAND_GRAVEYARD_NOTEAM       = 455,
     LANG_COMMAND_GRAVEYARD_ANY          = 456,
@@ -550,13 +542,9 @@ enum TrinityStrings
     LANG_NPCINFO_TRAINER                = 546,
     LANG_NPCINFO_DUNGEON_ID             = 547,
 
-    LANG_PINFO_ACCOUNT                  = 548,
-    LANG_PINFO_LEVEL                    = 549,
-    LANG_PINFO_MUTE                     = 550,
-    LANG_PINFO_BAN                      = 453,
-    LANG_PINFO_MAP_ONLINE               = 714,
-    LANG_PINFO_MAP_OFFLINE              = 716,
-    LANG_PINFO_GUILD_INFO               = 749,
+    //                                  = 548, see LANG_PINFO_GM_ACTIVE
+    //                                  = 549, see LANG_PINFO_BANNED
+    //                                  = 550, see LANG_PINFO_MUTED
 
     LANG_YOU_SET_EXPLORE_ALL            = 551,
     LANG_YOU_SET_EXPLORE_NOTHING        = 552,
@@ -704,9 +692,9 @@ enum TrinityStrings
     LANG_BG_QUEUE_ANNOUNCE_SELF         = 711,
     LANG_BG_QUEUE_ANNOUNCE_WORLD        = 712,
     LANG_YOUR_ARENA_LEVEL_REQ_ERROR     = 713,
-//                                      = 714, see LANG_PINFO_MAP_ONLINE
+//                                      = 714, see LANG_PINFO_ACC_ACCOUNT
     LANG_YOUR_BG_LEVEL_REQ_ERROR        = 715,
-//                                      = 716, see LANG_PINFO_MAP_OFFLINE
+//                                      = 716, see LANG_PINFO_ACC_LASTLOGIN
     LANG_BG_STARTED_ANNOUNCE_WORLD      = 717,
     LANG_ARENA_QUEUE_ANNOUNCE_WORLD_JOIN= 718,
     LANG_ARENA_QUEUE_ANNOUNCE_WORLD_EXIT= 719,
@@ -741,10 +729,10 @@ enum TrinityStrings
     LANG_DIST_ARENA_POINTS_END          = 746,
     LANG_BG_DISABLED                    = 747,
     LANG_ARENA_DISABLED                 = 748,
-//                                      = 749, not used
+//                                      = 749, see LANG_PINFO_ACC_OS
     LANG_BATTLEGROUND_PREMATURE_FINISH_WARNING = 750,       // "Not enough players. This game will close in %u mins."
     LANG_BATTLEGROUND_PREMATURE_FINISH_WARNING_SECS = 751,  // "Not enough players. This game will close in %u seconds."
-//                                      = 752, not used
+//                                      = 752, see LANG_PINFO_ACC_IP
 //  LANG_BG_WS_START_TWO_MINUTES        = 753, - defined above
 //  LANG_BG_AB_START_TWO_MINUTES        = 754, - defined above
 //  LANG_BG_EY_START_TWO_MINUTES        = 755, - defined above
@@ -802,7 +790,59 @@ enum TrinityStrings
     LANG_NPCINFO_MAILBOX                = 841,
     LANG_NPCINFO_PLAYER_VEHICLE         = 842,
 
-    // Room for in-game strings           843-999 not used
+    // Pinfo commands
+    LANG_PINFO_PLAYER                   = 453,
+    LANG_PINFO_GM_ACTIVE                = 548,
+    LANG_PINFO_BANNED                   = 549,
+    LANG_PINFO_MUTED                    = 550,
+    LANG_PINFO_ACC_ACCOUNT              = 714,
+    LANG_PINFO_ACC_LASTLOGIN            = 716,
+    LANG_PINFO_ACC_OS                   = 749,
+    LANG_PINFO_ACC_REGMAILS             = 879,
+    LANG_PINFO_ACC_IP                   = 752,
+    LANG_PINFO_CHR_LEVEL_LOW            = 843,
+    LANG_PINFO_CHR_RACE                 = 844,
+    LANG_PINFO_CHR_ALIVE                = 845,
+    LANG_PINFO_CHR_PHASE                = 846,
+    LANG_PINFO_CHR_MONEY                = 847,
+    LANG_PINFO_CHR_MAP                  = 848,
+    LANG_PINFO_CHR_GUILD                = 849,
+    LANG_PINFO_CHR_GUILD_RANK           = 850,
+    LANG_PINFO_CHR_GUILD_NOTE           = 851,
+    LANG_PINFO_CHR_GUILD_ONOTE          = 852,
+    LANG_PINFO_CHR_PLAYEDTIME           = 853,
+    LANG_PINFO_CHR_MAILS                = 854,
+    LANG_PINFO_CHR_LEVEL_HIGH           = 871,
+
+    LANG_CHARACTER_GENDER_MALE          = 855,
+    LANG_CHARACTER_GENDER_FEMALE        = 856,
+
+    LANG_ARENA_ERROR_NOT_FOUND          = 857,
+    LANG_ARENA_ERROR_NAME_EXISTS        = 858,
+    LANG_ARENA_ERROR_SIZE               = 859,
+    LANG_ARENA_ERROR_COMBAT             = 860,
+    LANG_AREAN_ERROR_NAME_NOT_FOUND     = 861,
+    LANG_ARENA_ERROR_NOT_MEMBER         = 862,
+    LANG_ARENA_ERROR_CAPTAIN            = 863,
+    LANG_ARENA_CREATE                   = 864,
+    LANG_ARENA_DISBAND                  = 865,
+    LANG_ARENA_RENAME                   = 866,
+    LANG_ARENA_CAPTAIN                  = 867,
+    LANG_ARENA_INFO_HEADER              = 868,
+    LANG_ARENA_INFO_MEMBERS             = 869,
+    LANG_ARENA_LOOKUP                   = 870,
+    //                                  = 871, see LANG_PINFO_CHR_LEVEL_HIGH
+    LANG_COMMAND_WRONGEMAIL             = 872,
+    LANG_NEW_EMAILS_NOT_MATCH           = 873,
+    LANG_COMMAND_EMAIL                  = 874,
+    LANG_EMAIL_TOO_LONG                 = 875,
+    LANG_COMMAND_NOTCHANGEEMAIL         = 876,
+    LANG_OLD_EMAIL_IS_NEW_EMAIL         = 877,
+    LANG_COMMAND_EMAIL_OUTPUT           = 878,
+    //                                  = 879, see LANG_PINFO_CHR_REGMAILS
+    LANG_ACCOUNT_SEC_TYPE               = 880,
+    LANG_RBAC_EMAIL_REQUIRED            = 881,
+    // Room for in-game strings           882-999 not used
 
     // Level 4 (CLI only commands)
     LANG_COMMAND_EXIT                   = 1000,
@@ -1041,7 +1081,9 @@ enum TrinityStrings
     LANG_COMMAND_NO_OUTDOOR_PVP_FORUND  = 5034,
     LANG_CALL_FOR_HELP                  = 5035,
     LANG_NPCINFO_EQUIPMENT              = 5036,
-    // Room for more Trinity strings      5037-9999
+    LANG_NPCINFO_MECHANIC_IMMUNE        = 5037,
+    LANG_NPCINFO_UNIT_FIELD_FLAGS       = 5038,
+    // Room for more Trinity strings      5039-9999
 
     // Level requirement notifications
     LANG_SAY_REQ                        = 6604,
@@ -1172,6 +1214,18 @@ enum TrinityStrings
     // Use for custom patches             11000-11999
     LANG_AUTO_BROADCAST                 = 11000,
     LANG_INVALID_REALMID                = 11001,
+
+    // Show Kick in world
+    LANG_COMMAND_KICKMESSAGE_WORLD = 11002,
+
+    // Show Mute in world
+    LANG_COMMAND_MUTEMESSAGE_WORLD = 11003,
+
+    // Show Ban in world
+    LANG_BAN_CHARACTER_YOUBANNEDMESSAGE_WORLD     = 11004,
+    LANG_BAN_CHARACTER_YOUPERMBANNEDMESSAGE_WORLD = 11005,
+    LANG_BAN_ACCOUNT_YOUBANNEDMESSAGE_WORLD       = 11006,
+    LANG_BAN_ACCOUNT_YOUPERMBANNEDMESSAGE_WORLD   = 11007,
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

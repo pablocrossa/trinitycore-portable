@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -35,30 +35,30 @@ enum Spells
 
 enum Events
 {
-    EVENT_MANABURN              = 0,
-    EVENT_SLEEP                 = 1,
-    EVENT_ILLUSIONS             = 2
+    EVENT_MANABURN              = 1,
+    EVENT_SLEEP                 = 2,
+    EVENT_ILLUSIONS             = 3
 };
 
 class boss_hazzarah : public CreatureScript
 {
-    public: boss_hazzarah() : CreatureScript("boss_hazzarah") {}
+    public: boss_hazzarah() : CreatureScript("boss_hazzarah") { }
 
         struct boss_hazzarahAI : public BossAI
         {
-            boss_hazzarahAI(Creature* creature) : BossAI(creature, DATA_EDGE_OF_MADNESS) {}
+            boss_hazzarahAI(Creature* creature) : BossAI(creature, DATA_EDGE_OF_MADNESS) { }
 
-            void Reset()
+            void Reset() OVERRIDE
             {
                 _Reset();
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
                 _JustDied();
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
                 _EnterCombat();
                 events.ScheduleEvent(EVENT_MANABURN, urand(4000, 10000));
@@ -66,7 +66,7 @@ class boss_hazzarah : public CreatureScript
                 events.ScheduleEvent(EVENT_ILLUSIONS, urand(10000, 18000));
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -111,7 +111,7 @@ class boss_hazzarah : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
             return new boss_hazzarahAI(creature);
         }

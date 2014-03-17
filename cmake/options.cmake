@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 Trinity <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -17,4 +17,5 @@ option(SKIP_SSE2        "Use MersenneTwister and disable SSE2"                  
 option(STANDARDIZE_ASM  "Use standard atomic calls and ASM, GCC|ICC support only"     0)
 option(WITH_WARNINGS    "Show all warnings during compile"                            0)
 option(WITH_COREDEBUG   "Include additional debug-code in core"                       0)
+option(WITH_MESHEXTRACTOR "Build meshextractor (alpha)"                               0)
 option(WITHOUT_GIT      "Disable the GIT testing routines"                            0)

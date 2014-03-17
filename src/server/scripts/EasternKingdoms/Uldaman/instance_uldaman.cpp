@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2007 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ EndScriptData */
 #include "InstanceScript.h"
 #include "uldaman.h"
 
-enum eSpells
+enum Spells
 {
     SPELL_ARCHAEDAS_AWAKEN      = 10347,
     SPELL_AWAKEN_VAULT_WALKER   = 10258,
@@ -41,13 +41,13 @@ enum Events
 class instance_uldaman : public InstanceMapScript
 {
     public:
-        instance_uldaman() : InstanceMapScript("instance_uldaman", 70) {}
+        instance_uldaman() : InstanceMapScript("instance_uldaman", 70) { }
 
         struct instance_uldaman_InstanceMapScript : public InstanceScript
         {
-            instance_uldaman_InstanceMapScript(Map* map) : InstanceScript(map) {}
+            instance_uldaman_InstanceMapScript(Map* map) : InstanceScript(map) { }
 
-            void Initialize()
+            void Initialize() OVERRIDE
             {
                 memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
 
@@ -67,7 +67,7 @@ class instance_uldaman : public InstanceMapScript
                 keystoneCheck = false;
             }
 
-            bool IsEncounterInProgress() const
+            bool IsEncounterInProgress() const OVERRIDE
             {
                 for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
                     if (m_auiEncounter[i] == IN_PROGRESS)
@@ -99,7 +99,7 @@ class instance_uldaman : public InstanceMapScript
             uint32 m_auiEncounter[MAX_ENCOUNTER];
             std::string str_data;
 
-            void OnGameObjectCreate(GameObject* go)
+            void OnGameObjectCreate(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
@@ -179,7 +179,7 @@ class instance_uldaman : public InstanceMapScript
                     for (std::vector<uint64>::const_iterator i = stoneKeepers.begin(); i != stoneKeepers.end(); ++i)
                     {
                         Creature* target = instance->GetCreature(*i);
-                        if (!target || !target->isAlive())
+                        if (!target || !target->IsAlive())
                             continue;
                         target->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                         target->setFaction(14);
@@ -201,7 +201,7 @@ class instance_uldaman : public InstanceMapScript
                 for (std::vector<uint64>::const_iterator i = archaedasWallMinions.begin(); i != archaedasWallMinions.end(); ++i)
                 {
                     Creature* target = instance->GetCreature(*i);
-                    if (!target || !target->isAlive() || target->getFaction() == 14)
+                    if (!target || !target->IsAlive() || target->getFaction() == 14)
                         continue;
                     archaedas->CastSpell(target, SPELL_AWAKEN_VAULT_WALKER, true);
                     target->CastSpell(target, SPELL_ARCHAEDAS_AWAKEN, true);
@@ -308,7 +308,7 @@ class instance_uldaman : public InstanceMapScript
                     }
                 }
             }
-            void Update(uint32 diff)
+            void Update(uint32 diff) OVERRIDE
             {
                 if (!keystoneCheck)
                     return;
@@ -327,7 +327,7 @@ class instance_uldaman : public InstanceMapScript
                     ironayaSealDoorTimer -= diff;
             }
 
-            void SetData(uint32 type, uint32 data)
+            void SetData(uint32 type, uint32 data) OVERRIDE
             {
                 switch (type)
                 {
@@ -393,7 +393,7 @@ class instance_uldaman : public InstanceMapScript
                 }
             }
 
-            void SetData64(uint32 type, uint64 data)
+            void SetData64(uint32 type, uint64 data) OVERRIDE
             {
                 // Archaedas
                 if (type == 0)
@@ -403,12 +403,12 @@ class instance_uldaman : public InstanceMapScript
                 }
             }
 
-            std::string GetSaveData()
+            std::string GetSaveData() OVERRIDE
             {
                 return str_data;
             }
 
-            void Load(const char* in)
+            void Load(const char* in) OVERRIDE
             {
                 if (!in)
                 {
@@ -430,7 +430,7 @@ class instance_uldaman : public InstanceMapScript
                 OUT_LOAD_INST_DATA_COMPLETE;
             }
 
-            void OnCreatureCreate(Creature* creature)
+            void OnCreatureCreate(Creature* creature) OVERRIDE
             {
                 switch (creature->GetEntry())
                 {
@@ -469,7 +469,7 @@ class instance_uldaman : public InstanceMapScript
                 }
             }
 
-            uint64 GetData64(uint32 identifier) const
+            uint64 GetData64(uint32 identifier) const OVERRIDE
             {
                 switch (identifier)
                 {
@@ -494,7 +494,7 @@ class instance_uldaman : public InstanceMapScript
                 return 0;
             } // end GetData64
 
-            void ProcessEvent(WorldObject* /*gameObject*/, uint32 eventId)
+            void ProcessEvent(WorldObject* /*gameObject*/, uint32 eventId) OVERRIDE
             {
                 switch (eventId)
                 {
@@ -507,7 +507,7 @@ class instance_uldaman : public InstanceMapScript
             }
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
         {
             return new instance_uldaman_InstanceMapScript(map);
         }

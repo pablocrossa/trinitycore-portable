@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class go_barrel_old_hillsbrad : public GameObjectScript
 public:
     go_barrel_old_hillsbrad() : GameObjectScript("go_barrel_old_hillsbrad") { }
 
-    bool OnGossipHello(Player* /*player*/, GameObject* go)
+    bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
     {
         if (InstanceScript* instance = go->GetInstanceScript())
         {
@@ -107,14 +107,14 @@ class boss_lieutenant_drake : public CreatureScript
 public:
     boss_lieutenant_drake() : CreatureScript("boss_lieutenant_drake") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_lieutenant_drakeAI (creature);
+        return new boss_lieutenant_drakeAI(creature);
     }
 
     struct boss_lieutenant_drakeAI : public ScriptedAI
     {
-        boss_lieutenant_drakeAI(Creature* creature) : ScriptedAI(creature) {}
+        boss_lieutenant_drakeAI(Creature* creature) : ScriptedAI(creature) { }
 
         bool CanPatrol;
         uint32 wpId;
@@ -124,7 +124,7 @@ public:
         uint32 MortalStrike_Timer;
         uint32 ExplodingShout_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             CanPatrol = true;
             wpId = 0;
@@ -135,22 +135,22 @@ public:
             ExplodingShout_Timer = 25000;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             /// @todo make this work
             if (CanPatrol && wpId == 0)
@@ -166,7 +166,7 @@ public:
             //Whirlwind
             if (Whirlwind_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_WHIRLWIND);
+                DoCastVictim(SPELL_WHIRLWIND);
                 Whirlwind_Timer = 20000+rand()%5000;
             } else Whirlwind_Timer -= diff;
 
@@ -174,7 +174,7 @@ public:
             if (Fear_Timer <= diff)
             {
                 Talk(SAY_SHOUT);
-                DoCast(me->getVictim(), SPELL_FRIGHTENING_SHOUT);
+                DoCastVictim(SPELL_FRIGHTENING_SHOUT);
                 Fear_Timer = 25000+rand()%10000;
             } else Fear_Timer -= diff;
 
@@ -182,7 +182,7 @@ public:
             if (MortalStrike_Timer <= diff)
             {
                 Talk(SAY_MORTAL);
-                DoCast(me->getVictim(), SPELL_MORTAL_STRIKE);
+                DoCastVictim(SPELL_MORTAL_STRIKE);
                 MortalStrike_Timer = 20000+rand()%10000;
             } else MortalStrike_Timer -= diff;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -46,9 +46,9 @@ class boss_azgalor : public CreatureScript
 public:
     boss_azgalor() : CreatureScript("boss_azgalor") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_azgalorAI (creature);
+        return GetInstanceAI<boss_azgalorAI>(creature);
     }
 
     struct boss_azgalorAI : public hyjal_trashAI
@@ -68,7 +68,7 @@ public:
 
         bool go;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             damageTaken = 0;
             RainTimer = 20000;
@@ -78,41 +78,42 @@ public:
             EnrageTimer = 600000;
             enraged = false;
 
-            if (instance && IsEvent)
+            if (IsEvent)
                 instance->SetData(DATA_AZGALOREVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
-            if (instance && IsEvent)
+            if (IsEvent)
                 instance->SetData(DATA_AZGALOREVENT, IN_PROGRESS);
+
             Talk(SAY_ONAGGRO);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_ONSLAY);
         }
 
-        void WaypointReached(uint32 waypointId)
+        void WaypointReached(uint32 waypointId) OVERRIDE
         {
             if (waypointId == 7 && instance)
             {
                 Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_THRALL));
-                if (target && target->isAlive())
+                if (target && target->IsAlive())
                     me->AddThreat(target, 0.0f);
             }
         }
 
-        void JustDied(Unit* killer)
+        void JustDied(Unit* killer) OVERRIDE
         {
             hyjal_trashAI::JustDied(killer);
-            if (instance && IsEvent)
+            if (IsEvent)
                 instance->SetData(DATA_AZGALOREVENT, DONE);
             Talk(SAY_ONDEATH);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (IsEvent)
             {
@@ -121,19 +122,16 @@ public:
                 if (!go)
                 {
                     go = true;
-                    if (instance)
-                    {
-                        AddWaypoint(0, 5492.91f,    -2404.61f,    1462.63f);
-                        AddWaypoint(1, 5531.76f,    -2460.87f,    1469.55f);
-                        AddWaypoint(2, 5554.58f,    -2514.66f,    1476.12f);
-                        AddWaypoint(3, 5554.16f,    -2567.23f,    1479.90f);
-                        AddWaypoint(4, 5540.67f,    -2625.99f,    1480.89f);
-                        AddWaypoint(5, 5508.16f,    -2659.2f,    1480.15f);
-                        AddWaypoint(6, 5489.62f,    -2704.05f,    1482.18f);
-                        AddWaypoint(7, 5457.04f,    -2726.26f,    1485.10f);
-                        Start(false, true);
-                        SetDespawnAtEnd(false);
-                    }
+                    AddWaypoint(0, 5492.91f,    -2404.61f,    1462.63f);
+                    AddWaypoint(1, 5531.76f,    -2460.87f,    1469.55f);
+                    AddWaypoint(2, 5554.58f,    -2514.66f,    1476.12f);
+                    AddWaypoint(3, 5554.16f,    -2567.23f,    1479.90f);
+                    AddWaypoint(4, 5540.67f,    -2625.99f,    1480.89f);
+                    AddWaypoint(5, 5508.16f,    -2659.2f,    1480.15f);
+                    AddWaypoint(6, 5489.62f,    -2704.05f,    1482.18f);
+                    AddWaypoint(7, 5457.04f,    -2726.26f,    1485.10f);
+                    Start(false, true);
+                    SetDespawnAtEnd(false);
                 }
             }
 
@@ -161,7 +159,7 @@ public:
 
             if (CleaveTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_CLEAVE);
+                DoCastVictim(SPELL_CLEAVE);
                 CleaveTimer = 10000+rand()%5000;
             } else CleaveTimer -= diff;
 
@@ -179,23 +177,22 @@ public:
 
 };
 
-class mob_lesser_doomguard : public CreatureScript
+class npc_lesser_doomguard : public CreatureScript
 {
 public:
-    mob_lesser_doomguard() : CreatureScript("mob_lesser_doomguard") { }
+    npc_lesser_doomguard() : CreatureScript("npc_lesser_doomguard") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new mob_lesser_doomguardAI (creature);
+        return GetInstanceAI<npc_lesser_doomguardAI>(creature);
     }
 
-    struct mob_lesser_doomguardAI : public hyjal_trashAI
+    struct npc_lesser_doomguardAI : public hyjal_trashAI
     {
-        mob_lesser_doomguardAI(Creature* creature) : hyjal_trashAI(creature)
+        npc_lesser_doomguardAI(Creature* creature) : hyjal_trashAI(creature)
         {
             instance = creature->GetInstanceScript();
-            if (instance)
-                AzgalorGUID = instance->GetData64(DATA_AZGALOR);
+            AzgalorGUID = instance->GetData64(DATA_AZGALOR);
         }
 
         uint32 CrippleTimer;
@@ -204,7 +201,7 @@ public:
         uint64 AzgalorGUID;
         InstanceScript* instance;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             CrippleTimer = 50000;
             WarstompTimer = 10000;
@@ -212,35 +209,36 @@ public:
             CheckTimer = 5000;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
         }
 
-        void WaypointReached(uint32 /*waypointId*/)
+        void WaypointReached(uint32 /*waypointId*/) OVERRIDE
         {
         }
 
-        void MoveInLineOfSight(Unit* who)
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+
         {
-            if (me->IsWithinDist(who, 50) && !me->isInCombat() && me->IsValidAttackTarget(who))
+            if (me->IsWithinDist(who, 50) && !me->IsInCombat() && me->IsValidAttackTarget(who))
                 AttackStart(who);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (CheckTimer <= diff)
             {
                 if (AzgalorGUID)
                 {
-                    Creature* boss = Unit::GetCreature((*me), AzgalorGUID);
+                    Creature* boss = ObjectAccessor::GetCreature(*me, AzgalorGUID);
                     if (!boss || (boss && boss->isDead()))
                     {
                         me->setDeathState(JUST_DIED);
@@ -276,5 +274,5 @@ public:
 void AddSC_boss_azgalor()
 {
     new boss_azgalor();
-    new mob_lesser_doomguard();
+    new npc_lesser_doomguard();
 }

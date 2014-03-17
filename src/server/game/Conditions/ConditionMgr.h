@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ enum ConditionTypes
     CONDITION_UNIT_STATE            = 21,                   // unitState        0              0                  true if unit has unitState
     CONDITION_MAPID                 = 22,                   // map_id           0              0                  true if in map_id
     CONDITION_AREAID                = 23,                   // area_id          0              0                  true if in area_id
-    CONDITION_UNUSED_24             = 24,                   //
+    CONDITION_CREATURE_TYPE         = 24,                   // cinfo.type       0              0                  true if creature_template.type = value1
     CONDITION_SPELL                 = 25,                   // spell_id         0              0                  true if player has learned spell
     CONDITION_PHASEMASK             = 26,                   // phasemask        0              0                  true if object is in phasemask
     CONDITION_LEVEL                 = 27,                   // level            ComparisonType 0                  true if unit's level is equal to param1 (param2 can modify the statement)
@@ -129,17 +129,8 @@ enum ConditionSourceType
     CONDITION_SOURCE_TYPE_SMART_EVENT                    = 22,
     CONDITION_SOURCE_TYPE_NPC_VENDOR                     = 23,
     CONDITION_SOURCE_TYPE_SPELL_PROC                     = 24,
-    CONDITION_SOURCE_TYPE_MAX                            = 25  // MAX
-};
-
-enum ComparisionType
-{
-    COMP_TYPE_EQ = 0,
-    COMP_TYPE_HIGH,
-    COMP_TYPE_LOW,
-    COMP_TYPE_HIGH_EQ,
-    COMP_TYPE_LOW_EQ,
-    COMP_TYPE_MAX
+    CONDITION_SOURCE_TYPE_PHASE_DEFINITION               = 25, // only 4.3.4
+    CONDITION_SOURCE_TYPE_MAX                            = 26  // MAX
 };
 
 enum RelationType
@@ -160,7 +151,7 @@ enum InstanceInfo
     INSTANCE_INFO_BOSS_STATE
 };
 
-enum
+enum MaxConditionTargets
 {
     MAX_CONDITION_TARGETS = 3
 };
@@ -201,6 +192,7 @@ struct Condition
         SourceType         = CONDITION_SOURCE_TYPE_NONE;
         SourceGroup        = 0;
         SourceEntry        = 0;
+        SourceId           = 0;
         ElseGroup          = 0;
         ConditionType      = CONDITION_NONE;
         ConditionTarget    = 0;
@@ -272,27 +264,6 @@ class ConditionMgr
         NpcVendorConditionContainer       NpcVendorConditionContainerStore;
         SmartEventConditionContainer      SmartEventConditionStore;
 };
-
-template <class T> bool CompareValues(ComparisionType type,  T val1, T val2)
-{
-    switch (type)
-    {
-        case COMP_TYPE_EQ:
-            return val1 == val2;
-        case COMP_TYPE_HIGH:
-            return val1 > val2;
-        case COMP_TYPE_LOW:
-            return val1 < val2;
-        case COMP_TYPE_HIGH_EQ:
-            return val1 >= val2;
-        case COMP_TYPE_LOW_EQ:
-            return val1 <= val2;
-        default:
-            // incorrect parameter
-            ASSERT(false);
-            return false;
-    }
-}
 
 #define sConditionMgr ACE_Singleton<ConditionMgr, ACE_Null_Mutex>::instance()
 

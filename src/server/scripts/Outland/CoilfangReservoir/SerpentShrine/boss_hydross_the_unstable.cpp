@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -84,9 +84,9 @@ class boss_hydross_the_unstable : public CreatureScript
 public:
     boss_hydross_the_unstable() : CreatureScript("boss_hydross_the_unstable") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_hydross_the_unstableAI (creature);
+        return GetInstanceAI<boss_hydross_the_unstableAI>(creature);
     }
 
     struct boss_hydross_the_unstableAI : public ScriptedAI
@@ -94,6 +94,8 @@ public:
         boss_hydross_the_unstableAI(Creature* creature) : ScriptedAI(creature), Summons(me)
         {
             instance = creature->GetInstanceScript();
+            beams[0] = 0;
+            beams[1] = 0;
         }
 
         InstanceScript* instance;
@@ -111,7 +113,7 @@ public:
         bool beam;
         SummonList Summons;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             DeSummonBeams();
             beams[0] = 0;
@@ -132,8 +134,7 @@ public:
 
             me->SetDisplayId(MODEL_CLEAN);
 
-            if (instance)
-                instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, NOT_STARTED);
+            instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, NOT_STARTED);
             beam = false;
             Summons.DespawnAll();
         }
@@ -159,30 +160,28 @@ public:
         }
         void DeSummonBeams()
         {
-            for (uint8 i=0; i<2; ++i)
+            for (uint8 i = 0; i < 2; ++i)
             {
-                Creature* mob = Unit::GetCreature(*me, beams[i]);
-                if (mob)
+                if (Creature* mob = Unit::GetCreature(*me, beams[i]))
                 {
                     mob->setDeathState(DEAD);
                     mob->RemoveCorpse();
                 }
             }
         }
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
-            if (instance)
-                instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, IN_PROGRESS);
+            instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, IN_PROGRESS);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(CorruptedForm ? SAY_CORRUPT_SLAY : SAY_CLEAN_SLAY);
         }
 
-        void JustSummoned(Creature* summoned)
+        void JustSummoned(Creature* summoned) OVERRIDE
         {
             if (summoned->GetEntry() == ENTRY_PURE_SPAWN)
             {
@@ -198,21 +197,20 @@ public:
             }
         }
 
-        void SummonedCreatureDespawn(Creature* summon)
+        void SummonedCreatureDespawn(Creature* summon) OVERRIDE
         {
             Summons.Despawn(summon);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(CorruptedForm ? SAY_CORRUPT_DEATH : SAY_CLEAN_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, DONE);
+            instance->SetData(DATA_HYDROSSTHEUNSTABLEEVENT, DONE);
             Summons.DespawnAll();
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!beam)
             {
@@ -260,7 +258,7 @@ public:
                                 break;
                         }
 
-                        DoCast(me->getVictim(), mark_spell);
+                        DoCastVictim(mark_spell);
 
                         if (MarkOfCorruption_Count < 5)
                             ++MarkOfCorruption_Count;
@@ -343,7 +341,7 @@ public:
                                 break;
                         }
 
-                        DoCast(me->getVictim(), mark_spell);
+                        DoCastVictim(mark_spell);
 
                         if (MarkOfHydross_Count < 5)
                             ++MarkOfHydross_Count;

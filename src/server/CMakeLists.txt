@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -17,7 +17,7 @@ if(CMAKE_COMPILER_IS_GNUCXX AND NOT MINGW)
 endif()
 
 if( SERVERS )
-  set(sources_Debugging
+  set(sources_windows_Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.cpp
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.h
   )

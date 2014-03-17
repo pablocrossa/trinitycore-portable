@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -22,13 +22,9 @@
 #include "Opcodes.h"
 #include "Log.h"
 
-AddonHandler::AddonHandler()
-{
-}
+AddonHandler::AddonHandler() { }
 
-AddonHandler::~AddonHandler()
-{
-}
+AddonHandler::~AddonHandler() { }
 
 bool AddonHandler::BuildAddonPacket(WorldPacket* source, WorldPacket* target)
 {
@@ -78,7 +74,7 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* source, WorldPacket* target)
 
             AddOnPacked >> enabled >> crc >> unk2;
 
-            sLog->outDebug(LOG_FILTER_NETWORKIO, "ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), enabled, crc, unk2);
+            TC_LOG_DEBUG("network", "ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), enabled, crc, unk2);
 
             uint8 state = (enabled ? 2 : 1);
             *target << uint8(state);
@@ -132,11 +128,11 @@ bool AddonHandler::BuildAddonPacket(WorldPacket* source, WorldPacket* target)
         *target << uint32(count);
 
         if (AddOnPacked.rpos() != AddOnPacked.size())
-            sLog->outDebug(LOG_FILTER_NETWORKIO, "packet under read!");
+            TC_LOG_DEBUG("network", "packet under read!");
     }
     else
     {
-        sLog->outError(LOG_FILTER_NETWORKIO, "Addon packet uncompress error :(");
+        TC_LOG_ERROR("network", "Addon packet uncompress error :(");
         return false;
     }
     return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ Totem::Totem(SummonPropertiesEntry const* properties, Unit* owner) : Minion(prop
 
 void Totem::Update(uint32 time)
 {
-    if (!GetOwner()->isAlive() || !isAlive())
+    if (!GetOwner()->IsAlive() || !IsAlive())
     {
         UnSummon();                                         // remove self
         return;
@@ -109,7 +109,7 @@ void Totem::UnSummon(uint32 msTime)
     RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
     // clear owner's totem slot
-    for (int i = SUMMON_SLOT_TOTEM; i < MAX_TOTEM_SLOT; ++i)
+    for (uint8 i = SUMMON_SLOT_TOTEM; i < MAX_TOTEM_SLOT; ++i)
     {
         if (GetOwner()->m_SummonSlot[i] == GetGUID())
         {
@@ -136,7 +136,7 @@ void Totem::UnSummon(uint32 msTime)
         {
             for (GroupReference* itr = group->GetFirstMember(); itr != NULL; itr = itr->next())
             {
-                Player* target = itr->getSource();
+                Player* target = itr->GetSource();
                 if (target && group->SameSubGroup(owner, target))
                     target->RemoveAurasDueToSpell(GetSpell(), GetGUID());
             }

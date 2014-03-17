@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -126,12 +126,13 @@ class BattlegroundMgr
         uint32 GetRatingDiscardTimer()  const;
         void InitAutomaticArenaPointDistribution();
         void LoadBattleMastersEntry();
+        void CheckBattleMasters();
         BattlegroundTypeId GetBattleMasterBG(uint32 entry) const
         {
             BattleMastersMap::const_iterator itr = mBattleMastersMap.find(entry);
             if (itr != mBattleMastersMap.end())
                 return itr->second;
-            return BATTLEGROUND_WS;
+            return BATTLEGROUND_TYPE_NONE;
         }
 
     private:

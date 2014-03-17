@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -87,13 +87,21 @@ class MotionMaster //: private std::stack<MovementGenerator *>
 
         void pop()
         {
+            if (empty())
+                return;
+
             Impl[_top] = NULL;
-            while (!top())
+            while (!empty() && !top())
                 --_top;
         }
         void push(_Ty _Val) { ++_top; Impl[_top] = _Val; }
 
-        bool needInitTop() const { return _needInit[_top]; }
+        bool needInitTop() const
+        {
+            if (empty())
+                return false;
+            return _needInit[_top];
+        }
         void InitTop();
     public:
 
@@ -112,8 +120,16 @@ class MotionMaster //: private std::stack<MovementGenerator *>
 
         bool empty() const { return (_top < 0); }
         int size() const { return _top + 1; }
-        _Ty top() const { return Impl[_top]; }
-        _Ty GetMotionSlot(int slot) const { return Impl[slot]; }
+        _Ty top() const
+        {
+            ASSERT(!empty());
+            return Impl[_top];
+        }
+        _Ty GetMotionSlot(int slot) const
+        {
+            ASSERT(slot >= 0);
+            return Impl[slot];
+        }
 
         void DirectDelete(_Ty curr);
         void DelayedDelete(_Ty curr);
@@ -153,8 +169,8 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         void MoveChase(Unit* target, float dist = 0.0f, float angle = 0.0f);
         void MoveConfused();
         void MoveFleeing(Unit* enemy, uint32 time = 0);
-        void MovePoint(uint32 id, const Position &pos)
-            { MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ); }
+        void MovePoint(uint32 id, Position const& pos, bool generatePath = true)
+            { MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ, generatePath); }
         void MovePoint(uint32 id, float x, float y, float z, bool generatePath = true);
 
         // These two movement types should only be used with creatures having landing/takeoff animations

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -102,9 +102,9 @@ class boss_fathomlord_karathress : public CreatureScript
 public:
     boss_fathomlord_karathress() : CreatureScript("boss_fathomlord_karathress") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_fathomlord_karathressAI (creature);
+        return GetInstanceAI<boss_fathomlord_karathressAI>(creature);
     }
 
     struct boss_fathomlord_karathressAI : public ScriptedAI
@@ -127,7 +127,7 @@ public:
 
         uint64 Advisors[MAX_ADVISORS];
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             CataclysmicBolt_Timer = 10000;
             Enrage_Timer = 600000;                              //10 minutes
@@ -135,28 +135,24 @@ public:
 
             BlessingOfTides = false;
 
-            if (instance)
-            {
-                uint64 RAdvisors[MAX_ADVISORS];
-                RAdvisors[0] = instance->GetData64(DATA_SHARKKIS);
-                RAdvisors[1] = instance->GetData64(DATA_TIDALVESS);
-                RAdvisors[2] = instance->GetData64(DATA_CARIBDIS);
-                //Respawn of the 3 Advisors
-                Creature* pAdvisor = NULL;
-                for (int i=0; i<MAX_ADVISORS; ++i)
-                    if (RAdvisors[i])
+            uint64 RAdvisors[MAX_ADVISORS];
+            RAdvisors[0] = instance->GetData64(DATA_SHARKKIS);
+            RAdvisors[1] = instance->GetData64(DATA_TIDALVESS);
+            RAdvisors[2] = instance->GetData64(DATA_CARIBDIS);
+            // Respawn of the 3 Advisors
+            for (uint8 i = 0; i < MAX_ADVISORS; ++i)
+                if (RAdvisors[i])
+                {
+                    Creature* advisor = ObjectAccessor::GetCreature(*me, RAdvisors[i]);
+                    if (advisor && !advisor->IsAlive())
                     {
-                        pAdvisor = (Unit::GetCreature((*me), RAdvisors[i]));
-                        if (pAdvisor && !pAdvisor->isAlive())
-                        {
-                            pAdvisor->Respawn();
-                            pAdvisor->AI()->EnterEvadeMode();
-                            pAdvisor->GetMotionMaster()->MoveTargetedHome();
-                        }
+                        advisor->Respawn();
+                        advisor->AI()->EnterEvadeMode();
+                        advisor->GetMotionMaster()->MoveTargetedHome();
                     }
-                instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
-            }
+                }
 
+            instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
         }
 
         void EventSharkkisDeath()
@@ -179,9 +175,6 @@ public:
 
         void GetAdvisors()
         {
-            if (!instance)
-                return;
-
             Advisors[0] = instance->GetData64(DATA_SHARKKIS);
             Advisors[1] = instance->GetData64(DATA_TIDALVESS);
             Advisors[2] = instance->GetData64(DATA_CARIBDIS);
@@ -189,9 +182,6 @@ public:
 
         void StartEvent(Unit* who)
         {
-            if (!instance)
-                return;
-
             GetAdvisors();
 
             Talk(SAY_AGGRO);
@@ -201,31 +191,30 @@ public:
             instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_FATHOMLORDKARATHRESSEVENT, DONE);
+            instance->SetData(DATA_FATHOMLORDKARATHRESSEVENT, DONE);
 
             //support for quest 10944
             me->SummonCreature(SEER_OLUM, OLUM_X, OLUM_Y, OLUM_Z, OLUM_O, TEMPSUMMON_TIMED_DESPAWN, 3600000);
         }
 
-        void EnterCombat(Unit* who)
+        void EnterCombat(Unit* who) OVERRIDE
         {
             StartEvent(who);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Only if not incombat check if the event is started
-            if (!me->isInCombat() && instance && instance->GetData(DATA_KARATHRESSEVENT))
+            if (!me->IsInCombat() && instance->GetData(DATA_KARATHRESSEVENT))
             {
                 if (Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESSEVENT_STARTER)))
                 {
@@ -239,7 +228,7 @@ public:
                 return;
 
             //someone evaded!
-            if (instance && !instance->GetData(DATA_KARATHRESSEVENT))
+            if (!instance->GetData(DATA_KARATHRESSEVENT))
             {
                 EnterEvadeMode();
                 return;
@@ -253,7 +242,7 @@ public:
 
                 //if there aren't other units, cast on the tank
                 if (!target)
-                    target = me->getVictim();
+                    target = me->GetVictim();
 
                 if (target)
                     DoCast(target, SPELL_CATACLYSMIC_BOLT);
@@ -263,7 +252,7 @@ public:
             //SearNova_Timer
             if (SearNova_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_SEAR_NOVA);
+                DoCastVictim(SPELL_SEAR_NOVA);
                 SearNova_Timer = 20000+rand()%40000;
             } else SearNova_Timer -= diff;
 
@@ -279,12 +268,11 @@ public:
             {
                 BlessingOfTides = true;
                 bool continueTriggering = false;
-                Creature* Advisor;
                 for (uint8 i = 0; i < MAX_ADVISORS; ++i)
                     if (Advisors[i])
                     {
-                        Advisor = (Unit::GetCreature(*me, Advisors[i]));
-                        if (Advisor && Advisor->isAlive())
+                        Creature* advisor = ObjectAccessor::GetCreature(*me, Advisors[i]);
+                        if (advisor && advisor->IsAlive())
                         {
                             continueTriggering = true;
                             break;
@@ -293,7 +281,7 @@ public:
                 if (continueTriggering)
                 {
                     DoCast(me, SPELL_BLESSING_OF_THE_TIDES);
-                    me->MonsterYell(SAY_GAIN_BLESSING_OF_TIDES, LANG_UNIVERSAL, 0);
+                    me->MonsterYell(SAY_GAIN_BLESSING_OF_TIDES, LANG_UNIVERSAL, NULL);
                     DoPlaySoundToSet(me, SOUND_GAIN_BLESSING_OF_TIDES);
                 }
             }
@@ -310,9 +298,9 @@ class boss_fathomguard_sharkkis : public CreatureScript
 public:
     boss_fathomguard_sharkkis() : CreatureScript("boss_fathomguard_sharkkis") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_fathomguard_sharkkisAI (creature);
+        return GetInstanceAI<boss_fathomguard_sharkkisAI>(creature);
     }
 
     struct boss_fathomguard_sharkkisAI : public ScriptedAI
@@ -320,6 +308,7 @@ public:
         boss_fathomguard_sharkkisAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
+            SummonedPet = 0;
         }
 
         InstanceScript* instance;
@@ -333,7 +322,7 @@ public:
 
         uint64 SummonedPet;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             LeechingThrow_Timer = 20000;
             TheBeastWithin_Timer = 30000;
@@ -342,40 +331,31 @@ public:
 
             pet = false;
 
-            Creature* Pet = Unit::GetCreature(*me, SummonedPet);
-            if (Pet && Pet->isAlive())
-            {
+            Creature* Pet = ObjectAccessor::GetCreature(*me, SummonedPet);
+            if (Pet && Pet->IsAlive())
                 Pet->DealDamage(Pet, Pet->GetHealth(), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
-            }
 
             SummonedPet = 0;
 
-            if (instance)
-                instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
+            instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-            {
-                if (Creature* Karathress = (Unit::GetCreature((*me), instance->GetData64(DATA_KARATHRESS))))
-                    CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventSharkkisDeath();
-            }
+            if (Creature* Karathress = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_KARATHRESS)))
+                CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventSharkkisDeath();
         }
 
-        void EnterCombat(Unit* who)
+        void EnterCombat(Unit* who) OVERRIDE
         {
-            if (instance)
-            {
-                instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
-                instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
-            }
+            instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
+            instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Only if not incombat check if the event is started
-            if (!me->isInCombat() && instance && instance->GetData(DATA_KARATHRESSEVENT))
+            if (!me->IsInCombat() && instance->GetData(DATA_KARATHRESSEVENT))
             {
                 if (Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESSEVENT_STARTER)))
                     AttackStart(target);
@@ -386,7 +366,7 @@ public:
                 return;
 
             //someone evaded!
-            if (instance && !instance->GetData(DATA_KARATHRESSEVENT))
+            if (!instance->GetData(DATA_KARATHRESSEVENT))
             {
                 EnterEvadeMode();
                 return;
@@ -395,14 +375,14 @@ public:
             //LeechingThrow_Timer
             if (LeechingThrow_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_LEECHING_THROW);
+                DoCastVictim(SPELL_LEECHING_THROW);
                 LeechingThrow_Timer = 20000;
             } else LeechingThrow_Timer -= diff;
 
             //Multishot_Timer
             if (Multishot_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_MULTISHOT);
+                DoCastVictim(SPELL_MULTISHOT);
                 Multishot_Timer = 20000;
             } else Multishot_Timer -= diff;
 
@@ -410,11 +390,11 @@ public:
             if (TheBeastWithin_Timer <= diff)
             {
                 DoCast(me, SPELL_THE_BEAST_WITHIN);
-                Creature* Pet = Unit::GetCreature(*me, SummonedPet);
-                if (Pet && Pet->isAlive())
-                {
+
+                Creature* Pet = ObjectAccessor::GetCreature(*me, SummonedPet);
+                if (Pet && Pet->IsAlive())
                     Pet->CastSpell(Pet, SPELL_PET_ENRAGE, true);
-                }
+
                 TheBeastWithin_Timer = 30000;
             } else TheBeastWithin_Timer -= diff;
 
@@ -457,9 +437,9 @@ class boss_fathomguard_tidalvess : public CreatureScript
 public:
     boss_fathomguard_tidalvess() : CreatureScript("boss_fathomguard_tidalvess") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_fathomguard_tidalvessAI (creature);
+        return GetInstanceAI<boss_fathomguard_tidalvessAI>(creature);
     }
 
     struct boss_fathomguard_tidalvessAI : public ScriptedAI
@@ -476,40 +456,33 @@ public:
         uint32 PoisonCleansing_Timer;
         uint32 Earthbind_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             FrostShock_Timer = 25000;
             Spitfire_Timer = 60000;
             PoisonCleansing_Timer = 30000;
             Earthbind_Timer = 45000;
 
-            if (instance)
-                instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
+            instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-            {
-                if (Creature* Karathress = Unit::GetCreature((*me), instance->GetData64(DATA_KARATHRESS)))
-                    CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventTidalvessDeath();
-            }
+            if (Creature* Karathress = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_KARATHRESS)))
+                CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventTidalvessDeath();
         }
 
-        void EnterCombat(Unit* who)
+        void EnterCombat(Unit* who) OVERRIDE
         {
-            if (instance)
-            {
-                instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
-                instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
-            }
+            instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
+            instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
             DoCast(me, SPELL_WINDFURY_WEAPON);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Only if not incombat check if the event is started
-            if (!me->isInCombat() && instance && instance->GetData(DATA_KARATHRESSEVENT))
+            if (!me->IsInCombat() && instance->GetData(DATA_KARATHRESSEVENT))
             {
                 if (Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESSEVENT_STARTER)))
                     AttackStart(target);
@@ -520,7 +493,7 @@ public:
                 return;
 
             //someone evaded!
-            if (instance && !instance->GetData(DATA_KARATHRESSEVENT))
+            if (!instance->GetData(DATA_KARATHRESSEVENT))
             {
                 EnterEvadeMode();
                 return;
@@ -534,7 +507,7 @@ public:
             //FrostShock_Timer
             if (FrostShock_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_FROST_SHOCK);
+                DoCastVictim(SPELL_FROST_SHOCK);
                 FrostShock_Timer = 25000+rand()%5000;
             } else FrostShock_Timer -= diff;
 
@@ -543,7 +516,7 @@ public:
             {
                 DoCast(me, SPELL_SPITFIRE_TOTEM);
                 if (Unit* SpitfireTotem = Unit::GetUnit(*me, CREATURE_SPITFIRE_TOTEM))
-                    SpitfireTotem->ToCreature()->AI()->AttackStart(me->getVictim());
+                    SpitfireTotem->ToCreature()->AI()->AttackStart(me->GetVictim());
 
                 Spitfire_Timer = 60000;
             }
@@ -580,9 +553,9 @@ class boss_fathomguard_caribdis : public CreatureScript
 public:
     boss_fathomguard_caribdis() : CreatureScript("boss_fathomguard_caribdis") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_fathomguard_caribdisAI (creature);
+        return GetInstanceAI<boss_fathomguard_caribdisAI>(creature);
     }
 
     struct boss_fathomguard_caribdisAI : public ScriptedAI
@@ -599,39 +572,32 @@ public:
         uint32 Heal_Timer;
         uint32 Cyclone_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             WaterBoltVolley_Timer = 35000;
             TidalSurge_Timer = 15000+rand()%5000;
             Heal_Timer = 55000;
             Cyclone_Timer = 30000+rand()%10000;
 
-            if (instance)
-                instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
+            instance->SetData(DATA_KARATHRESSEVENT, NOT_STARTED);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-            {
-                if (Creature* Karathress = Unit::GetCreature((*me), instance->GetData64(DATA_KARATHRESS)))
-                    CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventCaribdisDeath();
-            }
+            if (Creature* Karathress = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_KARATHRESS)))
+                CAST_AI(boss_fathomlord_karathress::boss_fathomlord_karathressAI, Karathress->AI())->EventCaribdisDeath();
         }
 
-        void EnterCombat(Unit* who)
+        void EnterCombat(Unit* who) OVERRIDE
         {
-            if (instance)
-            {
-                instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
-                instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
-            }
+            instance->SetData64(DATA_KARATHRESSEVENT_STARTER, who->GetGUID());
+            instance->SetData(DATA_KARATHRESSEVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Only if not incombat check if the event is started
-            if (!me->isInCombat() && instance && instance->GetData(DATA_KARATHRESSEVENT))
+            if (!me->IsInCombat() && instance->GetData(DATA_KARATHRESSEVENT))
             {
                 if (Unit* target = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESSEVENT_STARTER)))
                     AttackStart(target);
@@ -642,7 +608,7 @@ public:
                 return;
 
             //someone evaded!
-            if (instance && !instance->GetData(DATA_KARATHRESSEVENT))
+            if (!instance->GetData(DATA_KARATHRESSEVENT))
             {
                 EnterEvadeMode();
                 return;
@@ -651,16 +617,16 @@ public:
             //WaterBoltVolley_Timer
             if (WaterBoltVolley_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_WATER_BOLT_VOLLEY);
+                DoCastVictim(SPELL_WATER_BOLT_VOLLEY);
                 WaterBoltVolley_Timer = 30000;
             } else WaterBoltVolley_Timer -= diff;
 
             //TidalSurge_Timer
             if (TidalSurge_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_TIDAL_SURGE);
+                DoCastVictim(SPELL_TIDAL_SURGE);
                 // Hacky way to do it - won't trigger elseways
-                me->getVictim()->CastSpell(me->getVictim(), SPELL_TIDAL_SURGE_FREEZE, true);
+                me->GetVictim()->CastSpell(me->GetVictim(), SPELL_TIDAL_SURGE_FREEZE, true);
                 TidalSurge_Timer = 15000+rand()%5000;
             } else TidalSurge_Timer -= diff;
 
@@ -689,10 +655,10 @@ public:
                 // It can be cast on any of the mobs
                 Unit* unit = NULL;
 
-                while (unit == NULL || !unit->isAlive())
+                while (unit == NULL || !unit->IsAlive())
                     unit = selectAdvisorUnit();
 
-                if (unit && unit->isAlive())
+                if (unit && unit->IsAlive())
                     DoCast(unit, SPELL_HEAL);
                 Heal_Timer = 60000;
             }
@@ -705,24 +671,21 @@ public:
         Unit* selectAdvisorUnit()
         {
             Unit* unit = NULL;
-            if (instance)
+            switch (rand()%4)
             {
-                switch (rand()%4)
-                {
-                case 0:
-                    unit = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESS));
-                    break;
-                case 1:
-                    unit = Unit::GetUnit(*me, instance->GetData64(DATA_SHARKKIS));
-                    break;
-                case 2:
-                    unit = Unit::GetUnit(*me, instance->GetData64(DATA_TIDALVESS));
-                    break;
-                case 3:
-                    unit = me;
-                    break;
-                }
-            } else unit = me;
+            case 0:
+                unit = Unit::GetUnit(*me, instance->GetData64(DATA_KARATHRESS));
+                break;
+            case 1:
+                unit = Unit::GetUnit(*me, instance->GetData64(DATA_SHARKKIS));
+                break;
+            case 2:
+                unit = Unit::GetUnit(*me, instance->GetData64(DATA_TIDALVESS));
+                break;
+            case 3:
+                unit = me;
+                break;
+            }
             return unit;
         }
     };

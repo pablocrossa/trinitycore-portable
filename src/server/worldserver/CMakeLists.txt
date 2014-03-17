@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+# Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -29,18 +29,16 @@ set(worldserver_SRCS
 )
 
 if( WIN32 )
+  set(worldserver_SRCS
+    ${worldserver_SRCS}
+    ${sources_windows_Debugging}
+  )
   if ( MSVC )
     set(worldserver_SRCS
       ${worldserver_SRCS}
-      ${sources_Debugging}
       worldserver.rc
     )
-  else ( )
-    set(worldserver_SRCS
-      ${worldserver_SRCS}
-      ${sources_Debugging}
-    )
-  endif ()
+  endif()
 endif()
 
 include_directories(
@@ -72,7 +70,6 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src/server/game/Addons
   ${CMAKE_SOURCE_DIR}/src/server/game/AI
   ${CMAKE_SOURCE_DIR}/src/server/game/AI/CoreAI
-  ${CMAKE_SOURCE_DIR}/src/server/game/AI/EventAI
   ${CMAKE_SOURCE_DIR}/src/server/game/AI/ScriptedAI
   ${CMAKE_SOURCE_DIR}/src/server/game/AI/SmartScripts
   ${CMAKE_SOURCE_DIR}/src/server/game/AuctionHouse
@@ -179,6 +176,7 @@ target_link_libraries(worldserver
   ${MYSQL_LIBRARY}
   ${OPENSSL_LIBRARIES}
   ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 if( WIN32 )
@@ -197,7 +195,7 @@ endif()
 
 if( UNIX )
   install(TARGETS worldserver DESTINATION bin)
-  install(FILES worldserver.conf.dist DESTINATION etc)
+  install(FILES worldserver.conf.dist DESTINATION ${CONF_DIR})
 elseif( WIN32 )
   install(TARGETS worldserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
   install(FILES worldserver.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")

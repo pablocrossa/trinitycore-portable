@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -165,7 +165,7 @@ struct CalendarInvite
         void SetStatusTime(time_t statusTime) { _statusTime = statusTime; }
         time_t GetStatusTime() const { return _statusTime; }
 
-        void SetText(std::string text) { _text = text; }
+        void SetText(const std::string& text) { _text = text; }
         std::string GetText() const { return _text; }
 
         void SetStatus(CalendarInviteStatus status) { _status = status; }
@@ -222,10 +222,10 @@ struct CalendarEvent
         void SetGuildId(uint32 guildId) { _guildId = guildId; }
         uint32 GetGuildId() const { return _guildId; }
 
-        void SetTitle(std::string title) { _title = title; }
+        void SetTitle(const std::string& title) { _title = title; }
         std::string GetTitle() const { return _title; }
 
-        void SetDescription(std::string description) { _description = description; }
+        void SetDescription(const std::string& description) { _description = description; }
         std::string GetDescription() const { return _description; }
 
         void SetType(CalendarEventType type) { _type = type; }

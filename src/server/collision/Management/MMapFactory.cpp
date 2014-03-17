@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ namespace MMAP
 {
     // ######################## MMapFactory ########################
     // our global singleton copy
-    MMapManager *g_MMapManager = NULL;
+    MMapManager* g_MMapManager = NULL;
 
     MMapManager* MMapFactory::createOrGetMMapManager()
     {

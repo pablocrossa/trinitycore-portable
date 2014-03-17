@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -80,7 +80,7 @@ class BfCapturePoint
 
         virtual ~BfCapturePoint() { }
 
-        virtual void FillInitialWorldStates(WorldPacket& /*data*/) {}
+        virtual void FillInitialWorldStates(WorldPacket& /*data*/) { }
 
         // Send world state update to all players present
         void SendUpdateWorldState(uint32 field, uint32 value);
@@ -98,7 +98,7 @@ class BfCapturePoint
 
         // Returns true if the state of the objective has changed, in this case, the OutdoorPvP must send a world state ui update.
         virtual bool Update(uint32 diff);
-        virtual void ChangeTeam(TeamId /*oldTeam*/) {}
+        virtual void ChangeTeam(TeamId /*oldTeam*/) { }
         virtual void SendChangePhase();
 
         bool SetCapturePointData(GameObject* capturePoint);
@@ -223,7 +223,7 @@ class Battlefield : public ZoneScript
         void InvitePlayersInZoneToWar();
 
         /// Called when a Unit is kill in battlefield zone
-        virtual void HandleKill(Player* /*killer*/, Unit* /*killed*/) {};
+        virtual void HandleKill(Player* /*killer*/, Unit* /*killed*/) { };
 
         uint32 GetTypeId() { return m_TypeId; }
         uint32 GetZoneId() { return m_ZoneId; }
@@ -286,7 +286,7 @@ class Battlefield : public ZoneScript
 
         // Misc methods
         Creature* SpawnCreature(uint32 entry, float x, float y, float z, float o, TeamId team);
-        Creature* SpawnCreature(uint32 entry, Position pos, TeamId team);
+        Creature* SpawnCreature(uint32 entry, const Position& pos, TeamId team);
         GameObject* SpawnGameObject(uint32 entry, float x, float y, float z, float o);
 
         Creature* GetCreature(uint64 GUID);
@@ -309,9 +309,7 @@ class Battlefield : public ZoneScript
         /// Called when a player enter in battlefield zone
         virtual void OnPlayerEnterZone(Player* /*player*/) { }
 
-        WorldPacket BuildWarningAnnPacket(std::string const& msg);
         void SendWarningToAllInZone(uint32 entry);
-        //void SendWarningToAllInWar(int32 entry, ...); -- UNUSED
         void SendWarningToPlayer(Player* player, uint32 entry);
 
         void PlayerAcceptInviteToQueue(Player* player);
@@ -398,7 +396,7 @@ class Battlefield : public ZoneScript
         void KickAfkPlayers();
 
         // use for switch off all worldstate for client
-        virtual void SendRemoveWorldStates(Player* /*player*/) {}
+        virtual void SendRemoveWorldStates(Player* /*player*/) { }
 
         // use for send a packet for all player list
         void BroadcastPacketToZone(WorldPacket& data) const;

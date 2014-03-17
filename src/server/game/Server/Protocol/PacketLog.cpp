@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,13 +35,13 @@ PacketLog::~PacketLog()
 
 void PacketLog::Initialize()
 {
-    std::string logsDir = ConfigMgr::GetStringDefault("LogsDir", "");
+    std::string logsDir = sConfigMgr->GetStringDefault("LogsDir", "");
 
     if (!logsDir.empty())
         if ((logsDir.at(logsDir.length()-1) != '/') && (logsDir.at(logsDir.length()-1) != '\\'))
             logsDir.push_back('/');
 
-    std::string logname = ConfigMgr::GetStringDefault("PacketLogFile", "");
+    std::string logname = sConfigMgr->GetStringDefault("PacketLogFile", "");
     if (!logname.empty())
         _file = fopen((logsDir + logname).c_str(), "wb");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ namespace VMAP
 
     struct LocationInfo
     {
-        LocationInfo(): hitInstance(0), hitModel(0), ground_Z(-G3D::inf()) {}
+        LocationInfo(): hitInstance(0), hitModel(0), ground_Z(-G3D::inf()) { }
         const ModelInstance* hitInstance;
         const GroupModel* hitModel;
         float ground_Z;
@@ -85,7 +85,8 @@ namespace VMAP
 
     struct AreaInfo
     {
-        AreaInfo(): result(false), ground_Z(-G3D::inf()) {}
+        AreaInfo(): result(false), ground_Z(-G3D::inf()), flags(0), adtId(0),
+            rootId(0), groupId(0) { }
         bool result;
         float ground_Z;
         uint32 flags;

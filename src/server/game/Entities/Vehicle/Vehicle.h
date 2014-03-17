@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class Vehicle : public TransportBase
 
         bool AddPassenger(Unit* passenger, int8 seatId = -1);
         void EjectPassenger(Unit* passenger, Unit* controller);
-        void RemovePassenger(Unit* passenger);
+        Vehicle* RemovePassenger(Unit* passenger);
         void RelocatePassengers();
         void RemoveAllPassengers();
         bool IsVehicleInUse() const;
@@ -89,10 +89,20 @@ class Vehicle : public TransportBase
         void InitMovementInfoForBase();
 
         /// This method transforms supplied transport offsets into global coordinates
-        void CalculatePassengerPosition(float& x, float& y, float& z, float& o) const;
+        void CalculatePassengerPosition(float& x, float& y, float& z, float* o /*= NULL*/) const
+        {
+            TransportBase::CalculatePassengerPosition(x, y, z, o,
+                GetBase()->GetPositionX(), GetBase()->GetPositionY(),
+                GetBase()->GetPositionZ(), GetBase()->GetOrientation());
+        }
 
         /// This method transforms supplied global coordinates into local offsets
-        void CalculatePassengerOffset(float& x, float& y, float& z, float& o) const;
+        void CalculatePassengerOffset(float& x, float& y, float& z, float* o /*= NULL*/) const
+        {
+            TransportBase::CalculatePassengerOffset(x, y, z, o,
+                GetBase()->GetPositionX(), GetBase()->GetPositionY(),
+                GetBase()->GetPositionZ(), GetBase()->GetOrientation());
+        }
 
         void RemovePendingEvent(VehicleJoinEvent* e);
         void RemovePendingEventsForSeat(int8 seatId);
@@ -114,7 +124,7 @@ class VehicleJoinEvent : public BasicEvent
 {
     friend class Vehicle;
     protected:
-        VehicleJoinEvent(Vehicle* v, Unit* u) : Target(v), Passenger(u), Seat(Target->Seats.end()) {}
+        VehicleJoinEvent(Vehicle* v, Unit* u) : Target(v), Passenger(u), Seat(Target->Seats.end()) { }
         ~VehicleJoinEvent();
         bool Execute(uint64, uint32);
         void Abort(uint64);

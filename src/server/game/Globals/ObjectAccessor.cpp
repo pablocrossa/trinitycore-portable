@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -39,13 +39,9 @@
 
 #include <cmath>
 
-ObjectAccessor::ObjectAccessor()
-{
-}
+ObjectAccessor::ObjectAccessor() { }
 
-ObjectAccessor::~ObjectAccessor()
-{
-}
+ObjectAccessor::~ObjectAccessor() { }
 
 template<class T> T* ObjectAccessor::GetObjectInWorld(uint32 mapid, float x, float y, uint64 guid, T* /*fake*/)
 {
@@ -56,14 +52,14 @@ template<class T> T* ObjectAccessor::GetObjectInWorld(uint32 mapid, float x, flo
     CellCoord p = Trinity::ComputeCellCoord(x, y);
     if (!p.IsCoordValid())
     {
-        sLog->outError(LOG_FILTER_GENERAL, "ObjectAccessor::GetObjectInWorld: invalid coordinates supplied X:%f Y:%f grid cell [%u:%u]", x, y, p.x_coord, p.y_coord);
+        TC_LOG_ERROR("misc", "ObjectAccessor::GetObjectInWorld: invalid coordinates supplied X:%f Y:%f grid cell [%u:%u]", x, y, p.x_coord, p.y_coord);
         return NULL;
     }
 
     CellCoord q = Trinity::ComputeCellCoord(obj->GetPositionX(), obj->GetPositionY());
     if (!q.IsCoordValid())
     {
-        sLog->outError(LOG_FILTER_GENERAL, "ObjectAccessor::GetObjecInWorld: object (GUID: %u TypeId: %u) has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), q.x_coord, q.y_coord);
+        TC_LOG_ERROR("misc", "ObjectAccessor::GetObjecInWorld: object (GUID: %u TypeId: %u) has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUIDLow(), obj->GetTypeId(), obj->GetPositionX(), obj->GetPositionY(), q.x_coord, q.y_coord);
         return NULL;
     }
 
@@ -145,6 +141,15 @@ Corpse* ObjectAccessor::GetCorpse(WorldObject const& u, uint64 guid)
 GameObject* ObjectAccessor::GetGameObject(WorldObject const& u, uint64 guid)
 {
     return GetObjectInMap(guid, u.GetMap(), (GameObject*)NULL);
+}
+
+Transport* ObjectAccessor::GetTransport(WorldObject const& u, uint64 guid)
+{
+    if (GUID_HIPART(guid) != HIGHGUID_MO_TRANSPORT)
+        return NULL;
+
+    GameObject* go = GetGameObject(u, guid);
+    return go ? go->ToTransport() : NULL;
 }
 
 DynamicObject* ObjectAccessor::GetDynamicObject(WorldObject const& u, uint64 guid)
@@ -325,7 +330,7 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(uint64 player_guid, bool insignia
         return NULL;
     }
 
-    sLog->outDebug(LOG_FILTER_GENERAL, "Deleting Corpse and spawned bones.");
+    TC_LOG_DEBUG("misc", "Deleting Corpse and spawned bones.");
 
     // Map can be NULL
     Map* map = corpse->FindMap();

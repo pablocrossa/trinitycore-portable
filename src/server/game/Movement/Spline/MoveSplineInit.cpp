@@ -29,11 +29,7 @@ namespace Movement
 {
     UnitMoveType SelectSpeedType(uint32 moveFlags)
     {
-        /*! Not sure about MOVEMENTFLAG_CAN_FLY here - do creatures that can fly
-            but are on ground right now also have it? If yes, this needs a more
-            dynamic check, such as is flying now
-        */
-        if (moveFlags & (MOVEMENTFLAG_FLYING | MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_DISABLE_GRAVITY))
+        if (moveFlags & MOVEMENTFLAG_FLYING)
         {
             if (moveFlags & MOVEMENTFLAG_BACKWARD /*&& speed_obj.flight >= speed_obj.flight_back*/)
                 return MOVE_FLIGHT_BACK;
@@ -55,6 +51,8 @@ namespace Movement
         else if (moveFlags & MOVEMENTFLAG_BACKWARD /*&& speed_obj.run >= speed_obj.run_back*/)
             return MOVE_RUN_BACK;
 
+        // Flying creatures use MOVEMENTFLAG_CAN_FLY or MOVEMENTFLAG_DISABLE_GRAVITY
+        // Run speed is their default flight speed.
         return MOVE_RUN;
     }
 
@@ -62,23 +60,27 @@ namespace Movement
     {
         MoveSpline& move_spline = *unit->movespline;
 
-        bool transport = false;
-        Location real_position(unit->GetPositionX(), unit->GetPositionY(), unit->GetPositionZMinusOffset(), unit->GetOrientation());
-        // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes
-        if (unit->HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && unit->GetTransGUID())
-        {
-            transport = true;
-            real_position.x = unit->GetTransOffsetX();
-            real_position.y = unit->GetTransOffsetY();
-            real_position.z = unit->GetTransOffsetZ();
-            real_position.orientation = unit->GetTransOffsetO();
-        }
-
+        // Elevators also use MOVEMENTFLAG_ONTRANSPORT but we do not keep track of their position changes (movementInfo.transport.guid is 0 in that case)
+        bool transport = unit->HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && unit->GetTransGUID();
+        Location real_position;
         // there is a big chance that current position is unknown if current state is not finalized, need compute it
         // this also allows CalculatePath spline position and update map position in much greater intervals
         // Don't compute for transport movement if the unit is in a motion between two transports
         if (!move_spline.Finalized() && move_spline.onTransport == transport)
             real_position = move_spline.ComputePosition();
+        else
+        {
+            Position const* pos;
+            if (!transport)
+                pos = unit;
+            else
+                pos = &unit->m_movementInfo.transport.pos;
+
+            real_position.x = pos->GetPositionX();
+            real_position.y = pos->GetPositionY();
+            real_position.z = pos->GetPositionZ();
+            real_position.orientation = unit->GetOrientation();
+        }
 
         // should i do the things that user should do? - no.
         if (args.path.empty())
@@ -90,37 +92,87 @@ namespace Movement
         move_spline.onTransport = transport;
 
         uint32 moveFlags = unit->m_movementInfo.GetMovementFlags();
-        if (args.flags.walkmode)
-            moveFlags |= MOVEMENTFLAG_WALKING;
-        else
-            moveFlags &= ~MOVEMENTFLAG_WALKING;
-
         moveFlags |= (MOVEMENTFLAG_SPLINE_ENABLED|MOVEMENTFLAG_FORWARD);
-
-        if (!args.HasVelocity)
-            args.velocity = unit->GetSpeed(SelectSpeedType(moveFlags));
-
-        if (!args.Validate(unit))
-            return 0;
 
         if (moveFlags & MOVEMENTFLAG_ROOT)
             moveFlags &= ~MOVEMENTFLAG_MASK_MOVING;
 
-        unit->m_movementInfo.SetMovementFlags((MovementFlags)moveFlags);
+        if (!args.HasVelocity)
+        {
+            // If spline is initialized with SetWalk method it only means we need to select
+            // walk move speed for it but not add walk flag to unit
+            uint32 moveFlagsForSpeed = moveFlags;
+            if (args.flags.walkmode)
+                moveFlagsForSpeed |= MOVEMENTFLAG_WALKING;
+            else
+                moveFlagsForSpeed &= ~MOVEMENTFLAG_WALKING;
+
+            args.velocity = unit->GetSpeed(SelectSpeedType(moveFlagsForSpeed));
+        }
+
+        if (!args.Validate(unit))
+            return 0;
+
+        unit->m_movementInfo.SetMovementFlags(moveFlags);
         move_spline.Initialize(args);
 
-        WorldPacket data(!transport ? SMSG_MONSTER_MOVE : SMSG_MONSTER_MOVE_TRANSPORT, 64);
+        WorldPacket data(SMSG_MONSTER_MOVE, 64);
         data.append(unit->GetPackGUID());
         if (transport)
         {
+            data.SetOpcode(SMSG_MONSTER_MOVE_TRANSPORT);
             data.appendPackGUID(unit->GetTransGUID());
             data << int8(unit->GetTransSeat());
         }
 
         PacketBuilder::WriteMonsterMove(move_spline, data);
-        unit->SendMessageToSet(&data,true);
+        unit->SendMessageToSet(&data, true);
 
         return move_spline.Duration();
+    }
+
+    void MoveSplineInit::Stop()
+    {
+        MoveSpline& move_spline = *unit->movespline;
+
+        // No need to stop if we are not moving
+        if (move_spline.Finalized())
+            return;
+
+        bool transport = unit->HasUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT) && unit->GetTransGUID();
+        Location loc;
+        if (move_spline.onTransport == transport)
+            loc = move_spline.ComputePosition();
+        else
+        {
+            Position const* pos;
+            if (!transport)
+                pos = unit;
+            else
+                pos = &unit->m_movementInfo.transport.pos;
+
+            loc.x = pos->GetPositionX();
+            loc.y = pos->GetPositionY();
+            loc.z = pos->GetPositionZ();
+            loc.orientation = unit->GetOrientation();
+        }
+
+        args.flags = MoveSplineFlag::Done;
+        unit->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_FORWARD | MOVEMENTFLAG_SPLINE_ENABLED);
+        move_spline.onTransport = transport;
+        move_spline.Initialize(args);
+
+        WorldPacket data(SMSG_MONSTER_MOVE, 64);
+        data.append(unit->GetPackGUID());
+        if (transport)
+        {
+            data.SetOpcode(SMSG_MONSTER_MOVE_TRANSPORT);
+            data.appendPackGUID(unit->GetTransGUID());
+            data << int8(unit->GetTransSeat());
+        }
+
+        PacketBuilder::WriteStopMovement(loc, args.splineId, data);
+        unit->SendMessageToSet(&data, true);
     }
 
     MoveSplineInit::MoveSplineInit(Unit* m) : unit(m)
@@ -175,13 +227,8 @@ namespace Movement
     Vector3 TransportPathTransform::operator()(Vector3 input)
     {
         if (_transformForTransport)
-        {
             if (TransportBase* transport = _owner->GetDirectTransport())
-            {
-                float unused = 0.0f; // need reference
-                transport->CalculatePassengerOffset(input.x, input.y, input.z, unused);
-            }
-        }
+                transport->CalculatePassengerOffset(input.x, input.y, input.z);
 
         return input;
     }

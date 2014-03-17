@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -16,7 +16,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "ScriptMgr.h"
 #include "InstanceScript.h"
 #include "mechanar.h"
@@ -26,7 +25,7 @@ static DoorData const doorData[] =
     { GO_DOOR_MOARG_1,          DATA_GATEWATCHER_IRON_HAND,     DOOR_TYPE_PASSAGE,  BOUNDARY_NONE },
     { GO_DOOR_MOARG_2,          DATA_GATEWATCHER_GYROKILL,      DOOR_TYPE_PASSAGE,  BOUNDARY_NONE },
     { GO_DOOR_NETHERMANCER,     DATA_NETHERMANCER_SEPRETHREA,   DOOR_TYPE_ROOM,     BOUNDARY_NONE },
-    {0,                         0,                              DOOR_TYPE_ROOM,     BOUNDARY_NONE }
+    { 0,                        0,                              DOOR_TYPE_ROOM,     BOUNDARY_NONE }
 };
 
 class instance_mechanar : public InstanceMapScript
@@ -42,7 +41,6 @@ class instance_mechanar : public InstanceMapScript
                 LoadDoorData(doorData);
             }
 
-
             void OnGameObjectCreate(GameObject* gameObject)
             {
                 switch (gameObject->GetEntry())
@@ -57,7 +55,7 @@ class instance_mechanar : public InstanceMapScript
                 }
             }
 
-            void OnGameObjectRemove(GameObject* gameObject)
+            void OnGameObjectRemove(GameObject* gameObject) OVERRIDE
             {
                 switch (gameObject->GetEntry())
                 {
@@ -71,7 +69,7 @@ class instance_mechanar : public InstanceMapScript
                 }
             }
 
-            bool SetBossState(uint32 type, EncounterState state)
+            bool SetBossState(uint32 type, EncounterState state) OVERRIDE
             {
                 if (!InstanceScript::SetBossState(type, state))
                     return false;
@@ -91,7 +89,7 @@ class instance_mechanar : public InstanceMapScript
                 return true;
             }
 
-            std::string GetSaveData()
+            std::string GetSaveData() OVERRIDE
             {
                 OUT_SAVE_INST_DATA;
 
@@ -102,7 +100,7 @@ class instance_mechanar : public InstanceMapScript
                 return saveStream.str();
             }
 
-            void Load(const char* str)
+            void Load(const char* str) OVERRIDE
             {
                 if (!str)
                 {
@@ -135,7 +133,7 @@ class instance_mechanar : public InstanceMapScript
             }
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
         {
             return new instance_mechanar_InstanceMapScript(map);
         }

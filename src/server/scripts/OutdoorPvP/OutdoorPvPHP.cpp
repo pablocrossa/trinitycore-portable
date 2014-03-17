@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -62,6 +62,8 @@ OPvPCapturePointHP::OPvPCapturePointHP(OutdoorPvP* pvp, OutdoorPvPHPTowerType ty
 OutdoorPvPHP::OutdoorPvPHP()
 {
     m_TypeId = OUTDOOR_PVP_HP;
+    m_AllianceTowersControlled = 0;
+    m_HordeTowersControlled = 0;
 }
 
 bool OutdoorPvPHP::SetupOutdoorPvP()
@@ -366,7 +368,7 @@ class OutdoorPvP_hellfire_peninsula : public OutdoorPvPScript
         {
         }
 
-        OutdoorPvP* GetOutdoorPvP() const
+        OutdoorPvP* GetOutdoorPvP() const OVERRIDE
         {
             return new OutdoorPvPHP();
         }

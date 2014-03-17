@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -68,7 +68,7 @@ class DatabaseWorkerPool
             bool res = true;
             _connectionInfo = MySQLConnectionInfo(infoString);
 
-            sLog->outInfo(LOG_FILTER_SQL_DRIVER, "Opening DatabasePool '%s'. Asynchronous connections: %u, synchronous connections: %u.",
+            TC_LOG_INFO("sql.driver", "Opening DatabasePool '%s'. Asynchronous connections: %u, synchronous connections: %u.",
                 GetDatabaseName(), async_threads, synch_threads);
 
             //! Open asynchronous connections (delayed operations)
@@ -94,17 +94,17 @@ class DatabaseWorkerPool
             }
 
             if (res)
-                sLog->outInfo(LOG_FILTER_SQL_DRIVER, "DatabasePool '%s' opened successfully. %u total connections running.", GetDatabaseName(),
+                TC_LOG_INFO("sql.driver", "DatabasePool '%s' opened successfully. %u total connections running.", GetDatabaseName(),
                     (_connectionCount[IDX_SYNCH] + _connectionCount[IDX_ASYNC]));
             else
-                sLog->outError(LOG_FILTER_SQL_DRIVER, "DatabasePool %s NOT opened. There were errors opening the MySQL connections. Check your SQLDriverLogFile "
+                TC_LOG_ERROR("sql.driver", "DatabasePool %s NOT opened. There were errors opening the MySQL connections. Check your SQLDriverLogFile "
                     "for specific errors.", GetDatabaseName());
             return res;
         }
 
         void Close()
         {
-            sLog->outInfo(LOG_FILTER_SQL_DRIVER, "Closing down DatabasePool '%s'.", GetDatabaseName());
+            TC_LOG_INFO("sql.driver", "Closing down DatabasePool '%s'.", GetDatabaseName());
 
             //! Shuts down delaythreads for this connection pool by underlying deactivate().
             //! The next dequeue attempt in the worker thread tasks will result in an error,
@@ -120,7 +120,7 @@ class DatabaseWorkerPool
                 t->Close();         //! Closes the actualy MySQL connection.
             }
 
-            sLog->outInfo(LOG_FILTER_SQL_DRIVER, "Asynchronous connections on DatabasePool '%s' terminated. Proceeding with synchronous connections.",
+            TC_LOG_INFO("sql.driver", "Asynchronous connections on DatabasePool '%s' terminated. Proceeding with synchronous connections.",
                 GetDatabaseName());
 
             //! Shut down the synchronous connections
@@ -133,7 +133,7 @@ class DatabaseWorkerPool
             //! Deletes the ACE_Activation_Queue object and its underlying ACE_Message_Queue
             delete _queue;
 
-            sLog->outInfo(LOG_FILTER_SQL_DRIVER, "All connections on DatabasePool '%s' closed.", GetDatabaseName());
+            TC_LOG_INFO("sql.driver", "All connections on DatabasePool '%s' closed.", GetDatabaseName());
         }
 
         /**
@@ -214,6 +214,9 @@ class DatabaseWorkerPool
             T* t = GetFreeConnection();
             t->Execute(stmt);
             t->Unlock();
+
+            //! Delete proxy-class. Not needed anymore
+            delete stmt;
         }
 
         /**
@@ -363,10 +366,10 @@ class DatabaseWorkerPool
             switch (transaction->GetSize())
             {
                 case 0:
-                    sLog->outDebug(LOG_FILTER_SQL_DRIVER, "Transaction contains 0 queries. Not executing.");
+                    TC_LOG_DEBUG("sql.driver", "Transaction contains 0 queries. Not executing.");
                     return;
                 case 1:
-                    sLog->outDebug(LOG_FILTER_SQL_DRIVER, "Warning: Transaction only holds 1 query, consider removing Transaction context in code.");
+                    TC_LOG_DEBUG("sql.driver", "Warning: Transaction only holds 1 query, consider removing Transaction context in code.");
                     break;
                 default:
                     break;
@@ -430,7 +433,7 @@ class DatabaseWorkerPool
         */
 
         //! Automanaged (internally) pointer to a prepared statement object for usage in upper level code.
-        //! Pointer is deleted in this->Query(PreparedStatement*) or PreparedStatementTask::~PreparedStatementTask.
+        //! Pointer is deleted in this->DirectExecute(PreparedStatement*), this->Query(PreparedStatement*) or PreparedStatementTask::~PreparedStatementTask.
         //! This object is not tied to the prepared statement on the MySQL context yet until execution.
         PreparedStatement* GetPreparedStatement(uint32 index)
         {

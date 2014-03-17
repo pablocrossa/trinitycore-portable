@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ class boss_ramstein_the_gorger : public CreatureScript
 public:
     boss_ramstein_the_gorger() : CreatureScript("boss_ramstein_the_gorger") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_ramstein_the_gorgerAI (creature);
+        return GetInstanceAI<boss_ramstein_the_gorgerAI>(creature);
     }
 
     struct boss_ramstein_the_gorgerAI : public ScriptedAI
@@ -60,17 +60,17 @@ public:
         uint32 Trample_Timer;
         uint32 Knockout_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             Trample_Timer = 3000;
             Knockout_Timer = 12000;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             for (uint8 i = 0; i < 30; ++i)
             {
@@ -78,11 +78,10 @@ public:
                     mob->AI()->AttackStart(me->SelectNearestTarget(100.0f));
             }
 
-            if (instance)
-                instance->SetData(TYPE_RAMSTEIN, DONE);
+            instance->SetData(TYPE_RAMSTEIN, DONE);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -98,7 +97,7 @@ public:
             //Knockout
             if (Knockout_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_KNOCKOUT);
+                DoCastVictim(SPELL_KNOCKOUT);
                 Knockout_Timer = 10000;
             } else Knockout_Timer -= diff;
 

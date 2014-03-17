@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,8 +35,8 @@ Script Data End */
 
 enum Spells
 {
-    SPELL_TRESPASSER_A = 54028,
-    SPELL_TRESPASSER_H = 54029,
+    SPELL_TRESPASSER_A                     = 54028,
+    SPELL_TRESPASSER_H                     = 54029,
 
     SPELL_SUNREAVER_DISGUISE_FEMALE        = 70973,
     SPELL_SUNREAVER_DISGUISE_MALE          = 70974,
@@ -46,8 +46,10 @@ enum Spells
 
 enum NPCs // All outdoor guards are within 35.0f of these NPCs
 {
-    NPC_APPLEBOUGH_A = 29547,
-    NPC_SWEETBERRY_H = 29715,
+    NPC_APPLEBOUGH_A                       = 29547,
+    NPC_SWEETBERRY_H                       = 29715,
+    NPC_SILVER_COVENANT_GUARDIAN_MAGE      = 29254,
+    NPC_SUNREAVER_GUARDIAN_MAGE            = 29255,
 };
 
 class npc_mageguard_dalaran : public CreatureScript
@@ -64,13 +66,14 @@ public:
             creature->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_MAGIC, true);
         }
 
-        void Reset(){}
+        void Reset() OVERRIDE { }
 
-        void EnterCombat(Unit* /*who*/){}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void AttackStart(Unit* /*who*/){}
+        void AttackStart(Unit* /*who*/) OVERRIDE { }
 
-        void MoveInLineOfSight(Unit* who)
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+
         {
             if (!who || !who->IsInWorld() || who->GetZoneId() != 4395)
                 return;
@@ -80,7 +83,7 @@ public:
 
             Player* player = who->GetCharmerOrOwnerPlayerOrPlayerItself();
 
-            if (!player || player->isGameMaster() || player->IsBeingTeleported() ||
+            if (!player || player->IsGameMaster() || player->IsBeingTeleported() ||
                 // If player has Disguise aura for quest A Meeting With The Magister or An Audience With The Arcanist, do not teleport it away but let it pass
                 player->HasAura(SPELL_SUNREAVER_DISGUISE_FEMALE) || player->HasAura(SPELL_SUNREAVER_DISGUISE_MALE) ||
                 player->HasAura(SPELL_SILVER_COVENANT_DISGUISE_FEMALE) || player->HasAura(SPELL_SILVER_COVENANT_DISGUISE_MALE))
@@ -88,7 +91,7 @@ public:
 
             switch (me->GetEntry())
             {
-                case 29254:
+                case NPC_SILVER_COVENANT_GUARDIAN_MAGE:
                     if (player->GetTeam() == HORDE)              // Horde unit found in Alliance area
                     {
                         if (GetClosestCreatureWithEntry(me, NPC_APPLEBOUGH_A, 32.0f))
@@ -100,7 +103,7 @@ public:
                             DoCast(who, SPELL_TRESPASSER_A);     // Teleport the Horde unit out
                     }
                     break;
-                case 29255:
+                case NPC_SUNREAVER_GUARDIAN_MAGE:
                     if (player->GetTeam() == ALLIANCE)           // Alliance unit found in Horde area
                     {
                         if (GetClosestCreatureWithEntry(me, NPC_SWEETBERRY_H, 32.0f))
@@ -117,10 +120,10 @@ public:
             return;
         }
 
-        void UpdateAI(uint32 /*diff*/){}
+        void UpdateAI(uint32 /*diff*/) OVERRIDE { }
     };
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new npc_mageguard_dalaranAI(creature);
     }
@@ -130,9 +133,9 @@ public:
 ## npc_hira_snowdawn
 ######*/
 
-enum eHiraSnowdawn
+enum HiraSnowdawn
 {
-    SPELL_COLD_WEATHER_FLYING                   = 54197
+    SPELL_COLD_WEATHER_FLYING              = 54197
 };
 
 #define GOSSIP_TEXT_TRAIN_HIRA "I seek training to ride a steed."
@@ -142,9 +145,9 @@ class npc_hira_snowdawn : public CreatureScript
 public:
     npc_hira_snowdawn() : CreatureScript("npc_hira_snowdawn") { }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
-        if (!creature->isVendor() || !creature->isTrainer())
+        if (!creature->IsVendor() || !creature->IsTrainer())
             return false;
 
         player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_TRAIN_HIRA, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRAIN);
@@ -157,7 +160,7 @@ public:
         return true;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_TRAIN)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ class boss_epoch_hunter : public CreatureScript
 public:
     boss_epoch_hunter() : CreatureScript("boss_epoch_hunter") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_epoch_hunterAI (creature);
+        return GetInstanceAI<boss_epoch_hunterAI>(creature);
     }
 
     struct boss_epoch_hunterAI : public ScriptedAI
@@ -69,7 +69,7 @@ public:
         uint32 WingBuffet_Timer;
         uint32 Mda_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             SandBreath_Timer = urand(8000, 16000);
             ImpendingDeath_Timer = urand(25000, 30000);
@@ -77,25 +77,25 @@ public:
             Mda_Timer = 40000;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance && instance->GetData(TYPE_THRALL_EVENT) == IN_PROGRESS)
+            if (instance->GetData(TYPE_THRALL_EVENT) == IN_PROGRESS)
                 instance->SetData(TYPE_THRALL_PART4, DONE);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -104,10 +104,10 @@ public:
             //Sand Breath
             if (SandBreath_Timer <= diff)
             {
-                if (me->IsNonMeleeSpellCasted(false))
+                if (me->IsNonMeleeSpellCast(false))
                     me->InterruptNonMeleeSpells(false);
 
-                DoCast(me->getVictim(), SPELL_SAND_BREATH);
+                DoCastVictim(SPELL_SAND_BREATH);
 
                 Talk(SAY_BREATH);
 
@@ -116,7 +116,7 @@ public:
 
             if (ImpendingDeath_Timer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_IMPENDING_DEATH);
+                DoCastVictim(SPELL_IMPENDING_DEATH);
                 ImpendingDeath_Timer = 25000+rand()%5000;
             } else ImpendingDeath_Timer -= diff;
 

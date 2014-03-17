@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -87,6 +87,9 @@ struct SpellDestination
     SpellDestination(Position const& pos);
     SpellDestination(WorldObject const& wObj);
 
+    void Relocate(Position const& pos);
+    void RelocateOffset(Position const& offset);
+
     WorldLocation _position;
     uint64 _transportGUID;
     Position _transportOffset;
@@ -141,8 +144,10 @@ class SpellCastTargets
         void SetDst(float x, float y, float z, float orientation, uint32 mapId = MAPID_INVALID);
         void SetDst(Position const& pos);
         void SetDst(WorldObject const& wObj);
+        void SetDst(SpellDestination const& spellDest);
         void SetDst(SpellCastTargets const& spellTargets);
         void ModDst(Position const& pos);
+        void ModDst(SpellDestination const& spellDest);
         void RemoveDst();
 
         bool HasSrc() const { return GetTargetMask() & TARGET_FLAG_SOURCE_LOCATION; }
@@ -209,7 +214,7 @@ enum SpellEffectHandleMode
 
 class Spell
 {
-    friend void Unit::SetCurrentCastedSpell(Spell* pSpell);
+    friend void Unit::SetCurrentCastSpell(Spell* pSpell);
     friend class SpellScript;
     public:
 
@@ -301,7 +306,7 @@ class Spell
         void EffectKnockBack(SpellEffIndex effIndex);
         void EffectPullTowards(SpellEffIndex effIndex);
         void EffectDispelMechanic(SpellEffIndex effIndex);
-        void EffectSummonDeadPet(SpellEffIndex effIndex);
+        void EffectResurrectPet(SpellEffIndex effIndex);
         void EffectDestroyAllTotems(SpellEffIndex effIndex);
         void EffectDurabilityDamage(SpellEffIndex effIndex);
         void EffectSkill(SpellEffIndex effIndex);
@@ -359,7 +364,7 @@ class Spell
         void SelectImplicitCasterObjectTargets(SpellEffIndex effIndex, SpellImplicitTargetInfo const& targetType);
         void SelectImplicitTargetObjectTargets(SpellEffIndex effIndex, SpellImplicitTargetInfo const& targetType);
         void SelectImplicitChainTargets(SpellEffIndex effIndex, SpellImplicitTargetInfo const& targetType, WorldObject* target, uint32 effMask);
-        void SelectImplicitTrajTargets();
+        void SelectImplicitTrajTargets(SpellEffIndex effIndex);
 
         void SelectEffectTypeImplicitTargets(uint8 effIndex);
 
@@ -369,6 +374,8 @@ class Spell
         WorldObject* SearchNearbyTarget(float range, SpellTargetObjectTypes objectType, SpellTargetCheckTypes selectionType, ConditionList* condList = NULL);
         void SearchAreaTargets(std::list<WorldObject*>& targets, float range, Position const* position, Unit* referer, SpellTargetObjectTypes objectType, SpellTargetCheckTypes selectionType, ConditionList* condList);
         void SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTargets, WorldObject* target, SpellTargetObjectTypes objectType, SpellTargetCheckTypes selectType, ConditionList* condList, bool isChainHeal);
+
+        GameObject* SearchSpellFocus();
 
         void prepare(SpellCastTargets const* targets, AuraEffect const* triggeredByAura = NULL);
         void cancel();
@@ -415,8 +422,10 @@ class Spell
         void CheckSrc() { if (!m_targets.HasSrc()) m_targets.SetSrc(*m_caster); }
         void CheckDst() { if (!m_targets.HasDst()) m_targets.SetDst(*m_caster); }
 
-        static void SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 cast_count, SpellCastResult result, SpellCustomErrors customError = SPELL_CUSTOM_ERROR_NONE);
+        static void WriteCastResultInfo(WorldPacket& data, Player* caster, SpellInfo const* spellInfo, uint8 castCount, SpellCastResult result, SpellCustomErrors customError);
+        static void SendCastResult(Player* caster, SpellInfo const* spellInfo, uint8 castCount, SpellCastResult result, SpellCustomErrors customError = SPELL_CUSTOM_ERROR_NONE);
         void SendCastResult(SpellCastResult result);
+        void SendPetCastResult(SpellCastResult result);
         void SendSpellStart();
         void SendSpellGo();
         void SendSpellCooldown();
@@ -548,7 +557,7 @@ class Spell
         GameObject* focusObject;
 
         // Damage and healing in effects need just calculate
-        int32 m_damage;           // Damge   in effects count here
+        int32 m_damage;           // Damage  in effects count here
         int32 m_healing;          // Healing in effects count here
 
         // ******************************************
@@ -632,6 +641,7 @@ class Spell
         void CallScriptAfterHitHandlers();
         void CallScriptObjectAreaTargetSelectHandlers(std::list<WorldObject*>& targets, SpellEffIndex effIndex);
         void CallScriptObjectTargetSelectHandlers(WorldObject*& target, SpellEffIndex effIndex);
+        void CallScriptDestinationTargetSelectHandlers(SpellDestination& target, SpellEffIndex effIndex);
         bool CheckScriptEffectImplicitTargets(uint32 effIndex, uint32 effIndexToCheck);
         std::list<SpellScript*> m_loadedScripts;
 

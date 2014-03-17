@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -40,13 +40,13 @@ class Path
         void erase(uint32 idx) { i_nodes.erase(i_nodes.begin()+idx); }
         void crop(unsigned int start, unsigned int end)
         {
-            while(start && !i_nodes.empty())
+            while (start && !i_nodes.empty())
             {
                 i_nodes.pop_front();
                 --start;
             }
 
-            while(end && !i_nodes.empty())
+            while (end && !i_nodes.empty())
             {
                 i_nodes.pop_back();
                 --end;

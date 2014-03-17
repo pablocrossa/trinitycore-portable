@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -57,12 +57,12 @@ class npc_ame : public CreatureScript
 public:
     npc_ame() : CreatureScript("npc_ame") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest)
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) OVERRIDE
     {
         if (quest->GetQuestId() == QUEST_CHASING_AME)
         {
             CAST_AI(npc_escortAI, (creature->AI()))->Start(false, false, player->GetGUID());
-            creature->AI()->Talk(SAY_READY, player->GetGUID());
+            creature->AI()->Talk(SAY_READY, player);
             creature->SetUInt32Value(UNIT_FIELD_BYTES_1, 0);
             // Change faction so mobs attack
             creature->setFaction(113);
@@ -70,18 +70,18 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new npc_ameAI(creature);
     }
 
     struct npc_ameAI : public npc_escortAI
     {
-        npc_ameAI(Creature* creature) : npc_escortAI(creature) {}
+        npc_ameAI(Creature* creature) : npc_escortAI(creature) { }
 
         uint32 DemoralizingShoutTimer;
 
-        void WaypointReached(uint32 waypointId)
+        void WaypointReached(uint32 waypointId) OVERRIDE
         {
             if (Player* player = GetPlayerForEscort())
             {
@@ -89,44 +89,44 @@ public:
                 {
                     case 19:
                         me->SummonCreature(ENTRY_STOMPER, -6391.69f, -1730.49f, -272.83f, 4.96f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000);
-                        Talk(SAY_AGGRO1, player->GetGUID());
+                        Talk(SAY_AGGRO1, player);
                         break;
                     case 28:
-                        Talk(SAY_SEARCH, player->GetGUID());
+                        Talk(SAY_SEARCH, player);
                         break;
                     case 38:
                         me->SummonCreature(ENTRY_TARLORD, -6370.75f, -1382.84f, -270.51f, 6.06f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000);
-                        Talk(SAY_AGGRO2, player->GetGUID());
+                        Talk(SAY_AGGRO2, player);
                         break;
                     case 49:
                         me->SummonCreature(ENTRY_TARLORD1, -6324.44f, -1181.05f, -270.17f, 4.34f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 25000);
-                        Talk(SAY_AGGRO3, player->GetGUID());
+                        Talk(SAY_AGGRO3, player);
                         break;
                     case 55:
-                        Talk(SAY_FINISH, player->GetGUID());
+                        Talk(SAY_FINISH, player);
                         player->GroupEventHappens(QUEST_CHASING_AME, me);
                         break;
                 }
             }
         }
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             DemoralizingShoutTimer = 5000;
         }
 
-        void JustSummoned(Creature* summoned)
+        void JustSummoned(Creature* summoned) OVERRIDE
         {
             summoned->AI()->AttackStart(me);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             if (Player* player = GetPlayerForEscort())
                 player->FailQuest(QUEST_CHASING_AME);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             npc_escortAI::UpdateAI(diff);
             if (!UpdateVictim())
@@ -134,7 +134,7 @@ public:
 
             if (DemoralizingShoutTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_DEMORALIZINGSHOUT);
+                DoCastVictim(SPELL_DEMORALIZINGSHOUT);
                 DemoralizingShoutTimer = 70000;
             } else DemoralizingShoutTimer -= diff;
         }
@@ -173,7 +173,7 @@ class npc_ringo : public CreatureScript
 public:
     npc_ringo() : CreatureScript("npc_ringo") { }
 
-    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest)
+    bool OnQuestAccept(Player* player, Creature* creature, const Quest* quest) OVERRIDE
     {
         if (quest->GetQuestId() == QUEST_A_LITTLE_HELP)
         {
@@ -187,7 +187,7 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new npc_ringoAI(creature);
     }
@@ -202,7 +202,7 @@ public:
 
         uint64 SpraggleGUID;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             FaintTimer = urand(30000, 60000);
             EndEventProgress = 0;
@@ -210,11 +210,12 @@ public:
             SpraggleGUID = 0;
         }
 
-        void MoveInLineOfSight(Unit* who)
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+
         {
             FollowerAI::MoveInLineOfSight(who);
 
-            if (!me->getVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_SPRAGGLE)
+            if (!me->GetVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && who->GetEntry() == NPC_SPRAGGLE)
             {
                 if (me->IsWithinDistInMap(who, INTERACTION_DISTANCE))
                 {
@@ -230,7 +231,7 @@ public:
             }
         }
 
-        void SpellHit(Unit* /*pCaster*/, const SpellInfo* pSpell)
+        void SpellHit(Unit* /*pCaster*/, const SpellInfo* pSpell) OVERRIDE
         {
             if (HasFollowState(STATE_FOLLOW_INPROGRESS | STATE_FOLLOW_PAUSED) && pSpell->Id == SPELL_REVIVE_RINGO)
                 ClearFaint();
@@ -261,7 +262,7 @@ public:
             SetFollowPaused(false);
         }
 
-        void UpdateFollowerAI(uint32 Diff)
+        void UpdateFollowerAI(uint32 Diff) OVERRIDE
         {
             if (!UpdateVictim())
             {
@@ -270,7 +271,7 @@ public:
                     if (EndEventTimer <= Diff)
                     {
                         Creature* spraggle = Creature::GetCreature(*me, SpraggleGUID);
-                        if (!spraggle || !spraggle->isAlive())
+                        if (!spraggle || !spraggle->IsAlive())
                         {
                             SetFollowComplete();
                             return;

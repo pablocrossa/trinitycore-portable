@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -82,9 +82,9 @@ class boss_mother_shahraz : public CreatureScript
 public:
     boss_mother_shahraz() : CreatureScript("boss_mother_shahraz") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_shahrazAI (creature);
+        return GetInstanceAI<boss_shahrazAI>(creature);
     }
 
     struct boss_shahrazAI : public ScriptedAI
@@ -111,10 +111,9 @@ public:
 
         bool Enraged;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_MOTHERSHAHRAZEVENT, NOT_STARTED);
+            instance->SetBossState(DATA_MOTHER_SHAHRAZ, NOT_STARTED);
 
             for (uint8 i = 0; i<3; ++i)
                 TargetGUID[i] = 0;
@@ -134,24 +133,22 @@ public:
             Enraged = false;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_MOTHERSHAHRAZEVENT, IN_PROGRESS);
+            instance->SetBossState(DATA_MOTHER_SHAHRAZ, IN_PROGRESS);
 
             DoZoneInCombat();
             Talk(SAY_AGGRO);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_MOTHERSHAHRAZEVENT, DONE);
+            instance->SetBossState(DATA_MOTHER_SHAHRAZ, DONE);
 
             Talk(SAY_DEATH);
         }
@@ -165,7 +162,7 @@ public:
             for (uint8 i = 0; i < 3; ++i)
             {
                 Unit* unit = SelectTarget(SELECT_TARGET_RANDOM, 1);
-                if (unit && unit->isAlive() && (unit->GetTypeId() == TYPEID_PLAYER))
+                if (unit && unit->IsAlive() && (unit->GetTypeId() == TYPEID_PLAYER))
                 {
                     TargetGUID[i] = unit->GetGUID();
                     unit->CastSpell(unit, SPELL_TELEPORT_VISUAL, true);
@@ -174,7 +171,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -190,7 +187,7 @@ public:
             if (BeamTimer <= diff)
             {
                 Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0);
-                if (!target || !target->isAlive())
+                if (!target || !target->IsAlive())
                     return;
 
                 BeamTimer = 9000;
@@ -266,13 +263,13 @@ public:
 
             if (ShriekTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_SILENCING_SHRIEK);
+                DoCastVictim(SPELL_SILENCING_SHRIEK);
                 ShriekTimer = 25000+rand()%10 * 1000;
             } else ShriekTimer -= diff;
 
             if (SaberTimer <= diff)
             {
-                DoCast(me->getVictim(), SPELL_SABER_LASH);
+                DoCastVictim(SPELL_SABER_LASH);
                 SaberTimer = 25000+rand()%10 * 1000;
             } else SaberTimer -= diff;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -327,7 +327,7 @@ class EventMap
     typedef std::multimap<uint32, uint32> EventStore;
 
     public:
-        EventMap() : _time(0), _phase(0) {}
+        EventMap() : _time(0), _phase(0) { }
 
         /**
         * @name Reset
@@ -686,7 +686,7 @@ enum AICondition
 struct AISpellInfoType
 {
     AISpellInfoType() : target(AITARGET_SELF), condition(AICOND_COMBAT)
-        , cooldown(AI_DEFAULT_COOLDOWN), realCooldown(0), maxRange(0.0f){}
+        , cooldown(AI_DEFAULT_COOLDOWN), realCooldown(0), maxRange(0.0f){ }
     AITarget target;
     AICondition condition;
     uint32 cooldown;

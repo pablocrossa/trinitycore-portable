@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -40,15 +40,15 @@ enum DataTypes
 enum Creatures
 {
     BOSS_EYE_OF_CTHUN       = 15589,
-    MOB_CTHUN_PORTAL        = 15896,
-    MOB_CLAW_TENTACLE       = 15725,
-    MOB_EYE_TENTACLE        = 15726,
-    MOB_SMALL_PORTAL        = 15904,
-    MOB_BODY_OF_CTHUN       = 15809,
-    MOB_GIANT_CLAW_TENTACLE = 15728,
-    MOB_GIANT_EYE_TENTACLE  = 15334,
-    MOB_FLESH_TENTACLE      = 15802,
-    MOB_GIANT_PORTAL        = 15910,
+    NPC_CTHUN_PORTAL        = 15896,
+    NPC_CLAW_TENTACLE       = 15725,
+    NPC_EYE_TENTACLE        = 15726,
+    NPC_SMALL_PORTAL        = 15904,
+    NPC_BODY_OF_CTHUN       = 15809,
+    NPC_GIANT_CLAW_TENTACLE = 15728,
+    NPC_GIANT_EYE_TENTACLE  = 15334,
+    NPC_FLESH_TENTACLE      = 15802,
+    NPC_GIANT_PORTAL        = 15910,
 
     NPC_VISCIDUS            = 15299,
     NPC_GLOB_OF_VISCIDUS    = 15667,

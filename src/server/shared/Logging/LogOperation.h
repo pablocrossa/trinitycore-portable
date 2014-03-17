@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -24,7 +24,7 @@ struct LogMessage;
 class LogOperation
 {
     public:
-        LogOperation(Logger* _logger, LogMessage* _msg)
+        LogOperation(Logger const* _logger, LogMessage* _msg)
             : logger(_logger), msg(_msg)
         { }
 
@@ -33,8 +33,8 @@ class LogOperation
         int call();
 
     protected:
-        Logger *logger;
-        LogMessage *msg;
+        Logger const* logger;
+        LogMessage* msg;
 };
 
 #endif

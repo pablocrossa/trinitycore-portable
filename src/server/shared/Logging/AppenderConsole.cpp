@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -59,7 +59,7 @@ void AppenderConsole::InitColors(std::string const& str)
 
 void AppenderConsole::SetColor(bool stdout_stream, ColorTypes color)
 {
-    #if PLATFORM == PLATFORM_WINDOWS
+#if PLATFORM == PLATFORM_WINDOWS
     static WORD WinColorFG[MaxColors] =
     {
         0,                                                  // BLACK
@@ -87,7 +87,7 @@ void AppenderConsole::SetColor(bool stdout_stream, ColorTypes color)
 
     HANDLE hConsole = GetStdHandle(stdout_stream ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
     SetConsoleTextAttribute(hConsole, WinColorFG[color]);
-    #else
+#else
     enum ANSITextAttr
     {
         TA_NORMAL                                = 0,
@@ -156,7 +156,7 @@ void AppenderConsole::ResetColor(bool stdout_stream)
 
 void AppenderConsole::_write(LogMessage const& message)
 {
-    bool stdout_stream = message.level == LOG_LEVEL_ERROR || message.level == LOG_LEVEL_FATAL;
+    bool stdout_stream = !(message.level == LOG_LEVEL_ERROR || message.level == LOG_LEVEL_FATAL);
 
     if (_colored)
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -49,9 +49,9 @@ class boss_meathook : public CreatureScript
 public:
     boss_meathook() : CreatureScript("boss_meathook") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_meathookAI (creature);
+        return GetInstanceAI<boss_meathookAI>(creature);
     }
 
     struct boss_meathookAI : public ScriptedAI
@@ -59,8 +59,7 @@ public:
         boss_meathookAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
-            if (instance)
-                Talk(SAY_SPAWN);
+            Talk(SAY_SPAWN);
         }
 
         uint32 uiChainTimer;
@@ -69,25 +68,23 @@ public:
 
         InstanceScript* instance;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             uiChainTimer = urand(12000, 17000);   //seen on video 13, 17, 15, 12, 16
             uiDiseaseTimer = urand(2000, 4000);   //approx 3s
             uiFrenzyTimer = urand(21000, 26000);  //made it up
 
-            if (instance)
-                instance->SetData(DATA_MEATHOOK_EVENT, NOT_STARTED);
+            instance->SetData(DATA_MEATHOOK_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
-            if (instance)
-                instance->SetData(DATA_MEATHOOK_EVENT, IN_PROGRESS);
+            instance->SetData(DATA_MEATHOOK_EVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -115,17 +112,16 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_MEATHOOK_EVENT, DONE);
+            instance->SetData(DATA_MEATHOOK_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
-            if (victim == me)
+            if (victim->GetTypeId() != TYPEID_PLAYER)
                 return;
 
             Talk(SAY_SLAY);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -53,17 +53,35 @@ enum VehicleSpells
     VEHICLE_SPELL_PARACHUTE                      = 45472
 };
 
+struct PassengerInfo
+{
+    uint64 Guid;
+    bool IsUnselectable;
+
+    void Reset()
+    {
+        Guid = 0;
+        IsUnselectable = false;
+    }
+};
+
 struct VehicleSeat
 {
-    explicit VehicleSeat(VehicleSeatEntry const* seatInfo) : SeatInfo(seatInfo), Passenger(0) {}
+    explicit VehicleSeat(VehicleSeatEntry const* seatInfo) : SeatInfo(seatInfo)
+    {
+        Passenger.Reset();
+    }
+
+    bool IsEmpty() const { return !Passenger.Guid; }
+
     VehicleSeatEntry const* SeatInfo;
-    uint64 Passenger;
+    PassengerInfo Passenger;
 };
 
 struct VehicleAccessory
 {
     VehicleAccessory(uint32 entry, int8 seatId, bool isMinion, uint8 summonType, uint32 summonTime) :
-        AccessoryEntry(entry), IsMinion(isMinion), SummonTime(summonTime), SeatId(seatId), SummonedType(summonType) {}
+        AccessoryEntry(entry), IsMinion(isMinion), SummonTime(summonTime), SeatId(seatId), SummonedType(summonType) { }
     uint32 AccessoryEntry;
     uint32 IsMinion;
     uint32 SummonTime;
@@ -83,10 +101,35 @@ protected:
 
 public:
     /// This method transforms supplied transport offsets into global coordinates
-    virtual void CalculatePassengerPosition(float& x, float& y, float& z, float& o) const = 0;
+    virtual void CalculatePassengerPosition(float& x, float& y, float& z, float* o = NULL) const = 0;
 
     /// This method transforms supplied global coordinates into local offsets
-    virtual void CalculatePassengerOffset(float& x, float& y, float& z, float& o) const = 0;
+    virtual void CalculatePassengerOffset(float& x, float& y, float& z, float* o = NULL) const = 0;
+
+protected:
+    static void CalculatePassengerPosition(float& x, float& y, float& z, float* o, float transX, float transY, float transZ, float transO)
+    {
+        float inx = x, iny = y, inz = z;
+        if (o)
+            *o = Position::NormalizeOrientation(transO + *o);
+
+        x = transX + inx * std::cos(transO) - iny * std::sin(transO);
+        y = transY + iny * std::cos(transO) + inx * std::sin(transO);
+        z = transZ + inz;
+    }
+
+    static void CalculatePassengerOffset(float& x, float& y, float& z, float* o, float transX, float transY, float transZ, float transO)
+    {
+        if (o)
+            *o = Position::NormalizeOrientation(*o - transO);
+
+        z -= transZ;
+        y -= transY;    // y = searchedY * std::cos(o) + searchedX * std::sin(o)
+        x -= transX;    // x = searchedX * std::cos(o) + searchedY * std::sin(o + pi)
+        float inx = x, iny = y;
+        y = (iny - inx * std::tan(transO)) / (std::cos(transO) + std::sin(transO) * std::tan(transO));
+        x = (inx + iny * std::tan(transO)) / (std::cos(transO) + std::sin(transO) * std::tan(transO));
+    }
 };
 
 #endif

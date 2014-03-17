@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -59,11 +59,11 @@ class boss_postmaster_malown : public CreatureScript
 
         struct boss_postmaster_malownAI : public BossAI
         {
-            boss_postmaster_malownAI(Creature* creature) : BossAI(creature, TYPE_MALOWN) {}
+            boss_postmaster_malownAI(Creature* creature) : BossAI(creature, TYPE_MALOWN) { }
 
-            void Reset() {}
+            void Reset() OVERRIDE { }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
                 events.ScheduleEvent(EVENT_WAILINGDEAD, 19000);     // lasts 6 sec
                 events.ScheduleEvent(EVENT_BACKHAND, 8000);         // 2 sec stun
@@ -72,12 +72,12 @@ class boss_postmaster_malown : public CreatureScript
                 events.ScheduleEvent(EVENT_CALLOFTHEGRAVE, 25000);
             }
 
-            void KilledUnit(Unit* /*victim*/)
+            void KilledUnit(Unit* /*victim*/) OVERRIDE
             {
                 Talk(SAY_KILL);
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -124,7 +124,7 @@ class boss_postmaster_malown : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
             return new boss_postmaster_malownAI(creature);
         }

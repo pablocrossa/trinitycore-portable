@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class npc_skorn_whitecloud : public CreatureScript
 public:
     npc_skorn_whitecloud() : CreatureScript("npc_skorn_whitecloud") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_INFO_DEF)
@@ -55,9 +55,9 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
-        if (creature->isQuestGiver())
+        if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
 
         if (!player->GetQuestRewardStatus(770))
@@ -91,14 +91,14 @@ class npc_kyle_frenzied : public CreatureScript
 public:
     npc_kyle_frenzied() : CreatureScript("npc_kyle_frenzied") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_kyle_frenziedAI (creature);
+        return new npc_kyle_frenziedAI(creature);
     }
 
     struct npc_kyle_frenziedAI : public ScriptedAI
     {
-        npc_kyle_frenziedAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_kyle_frenziedAI(Creature* creature) : ScriptedAI(creature) { }
 
         bool EventActive;
         bool IsMovingToLunch;
@@ -106,7 +106,7 @@ public:
         uint32 EventTimer;
         uint8 EventPhase;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             EventActive = false;
             IsMovingToLunch = false;
@@ -118,9 +118,9 @@ public:
                 me->UpdateEntry(NPC_KYLE_FRENZIED);
         }
 
-        void SpellHit(Unit* Caster, SpellInfo const* Spell)
+        void SpellHit(Unit* Caster, SpellInfo const* Spell) OVERRIDE
         {
-            if (!me->getVictim() && !EventActive && Spell->Id == SPELL_LUNCH)
+            if (!me->GetVictim() && !EventActive && Spell->Id == SPELL_LUNCH)
             {
                 if (Caster->GetTypeId() == TYPEID_PLAYER)
                     PlayerGUID = Caster->GetGUID();
@@ -138,7 +138,7 @@ public:
             }
         }
 
-        void MovementInform(uint32 Type, uint32 PointId)
+        void MovementInform(uint32 Type, uint32 PointId) OVERRIDE
         {
             if (Type != POINT_MOTION_TYPE || !EventActive)
                 return;
@@ -147,7 +147,7 @@ public:
                 IsMovingToLunch = false;
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (EventActive)
             {
@@ -162,7 +162,7 @@ public:
                     switch (EventPhase)
                     {
                         case 1:
-                            if (Unit* unit = Unit::GetUnit(*me, PlayerGUID))
+                            if (Unit* unit = ObjectAccessor::GetUnit(*me, PlayerGUID))
                             {
                                 if (GameObject* go = unit->GetGameObject(SPELL_LUNCH))
                                 {
@@ -176,7 +176,7 @@ public:
                             me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_USE_STANDING);
                             break;
                         case 3:
-                            if (Player* unit = Unit::GetPlayer(*me, PlayerGUID))
+                            if (Player* unit = ObjectAccessor::GetPlayer(*me, PlayerGUID))
                                 unit->TalkedToCreature(me->GetEntry(), me->GetGUID());
 
                             me->UpdateEntry(NPC_KYLE_FRIENDLY);
@@ -264,29 +264,29 @@ class npc_plains_vision : public CreatureScript
 public:
     npc_plains_vision() : CreatureScript("npc_plains_vision") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-          return new npc_plains_visionAI (creature);
+          return new npc_plains_visionAI(creature);
     }
 
     struct npc_plains_visionAI  : public ScriptedAI
     {
-        npc_plains_visionAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_plains_visionAI(Creature* creature) : ScriptedAI(creature) { }
 
         bool newWaypoint;
         uint8 WayPointId;
         uint8 amountWP;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             WayPointId = 0;
             newWaypoint = true;
             amountWP  = 49;
         }
 
-        void EnterCombat(Unit* /*who*/){}
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void MovementInform(uint32 type, uint32 id)
+        void MovementInform(uint32 type, uint32 id) OVERRIDE
         {
             if (type != POINT_MOTION_TYPE)
                 return;
@@ -303,7 +303,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 /*diff*/)
+        void UpdateAI(uint32 /*diff*/) OVERRIDE
         {
             if (newWaypoint)
             {

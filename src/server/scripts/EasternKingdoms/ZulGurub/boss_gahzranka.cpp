@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -36,30 +36,30 @@ enum Spells
 
 enum Events
 {
-    EVENT_FROSTBREATH               = 0,
-    EVENT_MASSIVEGEYSER             = 1,
-    EVENT_SLAM                      = 2
+    EVENT_FROSTBREATH               = 1,
+    EVENT_MASSIVEGEYSER             = 2,
+    EVENT_SLAM                      = 3
 };
 
 class boss_gahzranka : public CreatureScript // gahzranka
 {
-    public: boss_gahzranka() : CreatureScript("boss_gahzranka") {}
+    public: boss_gahzranka() : CreatureScript("boss_gahzranka") { }
 
         struct boss_gahzrankaAI : public BossAI
         {
-            boss_gahzrankaAI(Creature* creature) : BossAI(creature, DATA_GAHZRANKA) {}
+            boss_gahzrankaAI(Creature* creature) : BossAI(creature, DATA_GAHZRANKA) { }
 
-            void Reset()
+            void Reset() OVERRIDE
             {
                 _Reset();
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
                 _JustDied();
             }
 
-            void EnterCombat(Unit* /*who*/)
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
                 _EnterCombat();
                 events.ScheduleEvent(EVENT_FROSTBREATH, 8000);
@@ -67,7 +67,7 @@ class boss_gahzranka : public CreatureScript // gahzranka
                 events.ScheduleEvent(EVENT_SLAM, 17000);
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -102,7 +102,7 @@ class boss_gahzranka : public CreatureScript // gahzranka
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
             return new boss_gahzrankaAI(creature);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -58,16 +58,19 @@ enum CombatPhase
     RHINO
 };
 
-#define DATA_SHARE_THE_LOVE                       1
+enum Misc
+{
+    DATA_SHARE_THE_LOVE                         = 1
+};
 
 class boss_gal_darah : public CreatureScript
 {
 public:
     boss_gal_darah() : CreatureScript("boss_gal_darah") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_gal_darahAI (creature);
+        return GetInstanceAI<boss_gal_darahAI>(creature);
     }
 
     struct boss_gal_darahAI : public ScriptedAI
@@ -95,7 +98,7 @@ public:
 
         InstanceScript* instance;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             uiStampedeTimer = 10*IN_MILLISECONDS;
             uiWhirlingSlashTimer = 21*IN_MILLISECONDS;
@@ -115,19 +118,17 @@ public:
 
             me->SetDisplayId(DISPLAY_TROLL);
 
-            if (instance)
-                instance->SetData(DATA_GAL_DARAH_EVENT, NOT_STARTED);
+            instance->SetData(DATA_GAL_DARAH_EVENT, NOT_STARTED);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
-            if (instance)
-                instance->SetData(DATA_GAL_DARAH_EVENT, IN_PROGRESS);
+            instance->SetData(DATA_GAL_DARAH_EVENT, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -171,7 +172,7 @@ public:
 
                         if (uiWhirlingSlashTimer <= diff)
                         {
-                            DoCast(me->getVictim(), SPELL_WHIRLING_SLASH);
+                            DoCastVictim(SPELL_WHIRLING_SLASH);
                             uiWhirlingSlashTimer = 21*IN_MILLISECONDS;
                             ++uiPhaseCounter;
                         } else uiWhirlingSlashTimer -= diff;
@@ -207,19 +208,19 @@ public:
                     {
                         if (uiPunctureTimer <= diff)
                         {
-                            DoCast(me->getVictim(), SPELL_PUNCTURE);
+                            DoCastVictim(SPELL_PUNCTURE);
                             uiPunctureTimer = 8*IN_MILLISECONDS;
                         } else uiPunctureTimer -= diff;
 
                         if (uiEnrageTimer <= diff)
                         {
-                            DoCast(me->getVictim(), SPELL_ENRAGE);
+                            DoCastVictim(SPELL_ENRAGE);
                             uiEnrageTimer = 20*IN_MILLISECONDS;
                         } else uiEnrageTimer -= diff;
 
                         if (uiStompTimer <= diff)
                         {
-                            DoCast(me->getVictim(), SPELL_STOMP);
+                            DoCastVictim(SPELL_STOMP);
                             uiStompTimer = 20*IN_MILLISECONDS;
                         } else uiStompTimer -= diff;
 
@@ -254,7 +255,7 @@ public:
             impaledList.push_back(guid);
         }
 
-        uint32 GetData(uint32 type) const
+        uint32 GetData(uint32 type) const OVERRIDE
         {
             if (type == DATA_SHARE_THE_LOVE)
                 return shareTheLove;
@@ -262,17 +263,16 @@ public:
             return 0;
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
 
-            if (instance)
-                instance->SetData(DATA_GAL_DARAH_EVENT, DONE);
+            instance->SetData(DATA_GAL_DARAH_EVENT, DONE);
         }
 
-        void KilledUnit(Unit* victim)
+        void KilledUnit(Unit* victim) OVERRIDE
         {
-            if (victim == me)
+            if (victim->GetTypeId() != TYPEID_PLAYER)
                 return;
 
             Talk(SAY_SLAY);
@@ -288,7 +288,7 @@ class achievement_share_the_love : public AchievementCriteriaScript
         {
         }
 
-        bool OnCheck(Player* /*player*/, Unit* target)
+        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
         {
             if (!target)
                 return false;

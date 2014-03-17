@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -53,14 +53,14 @@ class boss_curator : public CreatureScript
 public:
     boss_curator() : CreatureScript("boss_curator") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_curatorAI (creature);
+        return new boss_curatorAI(creature);
     }
 
     struct boss_curatorAI : public ScriptedAI
     {
-        boss_curatorAI(Creature* creature) : ScriptedAI(creature) {}
+        boss_curatorAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 AddTimer;
         uint32 HatefulBoltTimer;
@@ -69,7 +69,7 @@ public:
         bool Enraged;
         bool Evocating;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             AddTimer = 10000;
             HatefulBoltTimer = 15000;                           //This time may be wrong
@@ -80,22 +80,22 @@ public:
             me->ApplySpellImmune(0, IMMUNITY_DAMAGE, SPELL_SCHOOL_MASK_ARCANE, true);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_KILL);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEATH);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -60,13 +60,13 @@ public:
     typedef std::map<std::string, Realm> RealmMap;
 
     RealmList();
-    ~RealmList() {}
+    ~RealmList() { }
 
     void Initialize(uint32 updateInterval);
 
     void UpdateIfNeed();
 
-    void AddRealm(Realm NewRealm) {m_realms[NewRealm.name] = NewRealm;}
+    void AddRealm(const Realm& NewRealm) { m_realms[NewRealm.name] = NewRealm; }
 
     RealmMap::const_iterator begin() const { return m_realms.begin(); }
     RealmMap::const_iterator end() const { return m_realms.end(); }

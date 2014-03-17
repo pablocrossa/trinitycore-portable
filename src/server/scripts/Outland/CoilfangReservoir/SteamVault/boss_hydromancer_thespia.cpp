@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
- * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -15,18 +14,6 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
-/* ScriptData
-SDName: Boss_Hydromancer_Thespia
-SD%Complete: 80
-SDComment: Needs additional adjustments (when instance script is adjusted)
-SDCategory: Coilfang Resevoir, The Steamvault
-EndScriptData */
-
-/* ContentData
-boss_hydromancer_thespia
-mob_coilfang_waterelemental
-EndContentData */
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
@@ -52,9 +39,9 @@ class boss_hydromancer_thespia : public CreatureScript
 public:
     boss_hydromancer_thespia() : CreatureScript("boss_hydromancer_thespia") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new boss_thespiaAI (creature);
+        return GetInstanceAI<boss_thespiaAI>(creature);
     }
 
     struct boss_thespiaAI : public ScriptedAI
@@ -70,38 +57,35 @@ public:
         uint32 LungBurst_Timer;
         uint32 EnvelopingWinds_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             LightningCloud_Timer = 15000;
             LungBurst_Timer = 7000;
             EnvelopingWinds_Timer = 9000;
 
-            if (instance)
-                instance->SetData(TYPE_HYDROMANCER_THESPIA, NOT_STARTED);
+            instance->SetBossState(DATA_HYDROMANCER_THESPIA, NOT_STARTED);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
             Talk(SAY_DEAD);
 
-            if (instance)
-                instance->SetData(TYPE_HYDROMANCER_THESPIA, DONE);
+            instance->SetBossState(DATA_HYDROMANCER_THESPIA, DONE);
         }
 
-        void KilledUnit(Unit* /*victim*/)
+        void KilledUnit(Unit* /*victim*/) OVERRIDE
         {
             Talk(SAY_SLAY);
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             Talk(SAY_AGGRO);
 
-            if (instance)
-                instance->SetData(TYPE_HYDROMANCER_THESPIA, IN_PROGRESS);
+            instance->SetBossState(DATA_HYDROMANCER_THESPIA, IN_PROGRESS);
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -147,30 +131,30 @@ public:
 
 };
 
-class mob_coilfang_waterelemental : public CreatureScript
+class npc_coilfang_waterelemental : public CreatureScript
 {
 public:
-    mob_coilfang_waterelemental() : CreatureScript("mob_coilfang_waterelemental") { }
+    npc_coilfang_waterelemental() : CreatureScript("npc_coilfang_waterelemental") { }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new mob_coilfang_waterelementalAI (creature);
+        return new npc_coilfang_waterelementalAI(creature);
     }
 
-    struct mob_coilfang_waterelementalAI : public ScriptedAI
+    struct npc_coilfang_waterelementalAI : public ScriptedAI
     {
-        mob_coilfang_waterelementalAI(Creature* creature) : ScriptedAI(creature) {}
+        npc_coilfang_waterelementalAI(Creature* creature) : ScriptedAI(creature) { }
 
         uint32 WaterBoltVolley_Timer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             WaterBoltVolley_Timer = 3000+rand()%3000;
         }
 
-        void EnterCombat(Unit* /*who*/) { }
+        void EnterCombat(Unit* /*who*/) OVERRIDE { }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             if (!UpdateVictim())
                 return;
@@ -190,5 +174,5 @@ public:
 void AddSC_boss_hydromancer_thespia()
 {
     new boss_hydromancer_thespia();
-    new mob_coilfang_waterelemental();
+    new npc_coilfang_waterelemental();
 }

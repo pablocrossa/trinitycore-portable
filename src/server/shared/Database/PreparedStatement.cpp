@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,13 +21,9 @@
 
 PreparedStatement::PreparedStatement(uint32 index) :
 m_stmt(NULL),
-m_index(index)
-{
-}
+m_index(index) { }
 
-PreparedStatement::~PreparedStatement()
-{
-}
+PreparedStatement::~PreparedStatement() { }
 
 void PreparedStatement::BindParameters()
 {
@@ -81,7 +77,7 @@ void PreparedStatement::BindParameters()
     }
     #ifdef _DEBUG
     if (i < m_stmt->m_paramCount)
-        sLog->outWarn(LOG_FILTER_SQL, "[WARNING]: BindParameters() for statement %u did not bind all allocated parameters", m_index);
+        TC_LOG_WARN("sql.sql", "[WARNING]: BindParameters() for statement %u did not bind all allocated parameters", m_index);
     #endif
 }
 
@@ -203,6 +199,7 @@ void PreparedStatement::setNull(const uint8 index)
 }
 
 MySQLPreparedStatement::MySQLPreparedStatement(MYSQL_STMT* stmt) :
+m_stmt(NULL),
 m_Mstmt(stmt),
 m_bind(NULL)
 {
@@ -243,7 +240,7 @@ void MySQLPreparedStatement::ClearParameters()
 
 static bool ParamenterIndexAssertFail(uint32 stmtIndex, uint8 index, uint32 paramCount)
 {
-    sLog->outError(LOG_FILTER_SQL_DRIVER, "Attempted to bind parameter %u%s on a PreparedStatement %u (statement has only %u parameters)", uint32(index) + 1, (index == 1 ? "st" : (index == 2 ? "nd" : (index == 3 ? "rd" : "nd"))), stmtIndex, paramCount);
+    TC_LOG_ERROR("sql.driver", "Attempted to bind parameter %u%s on a PreparedStatement %u (statement has only %u parameters)", uint32(index) + 1, (index == 1 ? "st" : (index == 2 ? "nd" : (index == 3 ? "rd" : "nd"))), stmtIndex, paramCount);
     return false;
 }
 
@@ -253,7 +250,7 @@ bool MySQLPreparedStatement::CheckValidIndex(uint8 index)
     ASSERT(index < m_paramCount || ParamenterIndexAssertFail(m_stmt->m_index, index, m_paramCount));
 
     if (m_paramsSet[index])
-        sLog->outWarn(LOG_FILTER_SQL, "[WARNING] Prepared Statement (id: %u) trying to bind value on already bound index (%u).", m_stmt->m_index, index);
+        TC_LOG_WARN("sql.sql", "[WARNING] Prepared Statement (id: %u) trying to bind value on already bound index (%u).", m_stmt->m_index, index);
     return true;
 }
 
@@ -450,16 +447,12 @@ std::string MySQLPreparedStatement::getQueryString(std::string const& sqlPattern
 //- Execution
 PreparedStatementTask::PreparedStatementTask(PreparedStatement* stmt) :
 m_stmt(stmt),
-m_has_result(false)
-{
-}
+m_has_result(false) { }
 
 PreparedStatementTask::PreparedStatementTask(PreparedStatement* stmt, PreparedQueryResultFuture result) :
 m_stmt(stmt),
 m_has_result(true),
-m_result(result)
-{
-}
+m_result(result) { }
 
 
 PreparedStatementTask::~PreparedStatementTask()

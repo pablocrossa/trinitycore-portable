@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -255,7 +255,7 @@ class npc_arthas : public CreatureScript
 public:
     npc_arthas() : CreatureScript("npc_arthas") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action)
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
     {
         player->PlayerTalkClass->ClearMenus();
         npc_arthasAI* ai = CAST_AI(npc_arthas::npc_arthasAI, creature->AI());
@@ -298,7 +298,7 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature)
+    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
     {
         npc_arthasAI* ai = CAST_AI(npc_arthas::npc_arthasAI, creature->AI());
 
@@ -342,9 +342,9 @@ public:
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
-        return new npc_arthasAI(creature);
+        return GetInstanceAI<npc_arthasAI>(creature);
     }
 
     struct npc_arthasAI : public npc_escortAI
@@ -379,7 +379,7 @@ public:
 
         uint32 exorcismTimer;
 
-        void Reset()
+        void Reset() OVERRIDE
         {
             utherGUID = 0;
             jainaGUID = 0;
@@ -399,33 +399,30 @@ public:
             malganisGUID = 0;
             infiniteGUID = 0;
 
-            if (instance) {
-                instance->SetData(DATA_ARTHAS_EVENT, NOT_STARTED);
-                switch (instance->GetData(DATA_ARTHAS_EVENT))
-                {
-                    case NOT_STARTED:
-                        bStepping = true;
-                        step = 0;
-                        me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                        bossEvent = DATA_MEATHOOK_EVENT;
-                        gossipStep = 0;
-                        break;
-                }
-                phaseTimer = 1000;
-                exorcismTimer = 7300;
-                wave = 0;
+            instance->SetData(DATA_ARTHAS_EVENT, NOT_STARTED);
+            switch (instance->GetData(DATA_ARTHAS_EVENT))
+            {
+                case NOT_STARTED:
+                    bStepping = true;
+                    step = 0;
+                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                    bossEvent = DATA_MEATHOOK_EVENT;
+                    gossipStep = 0;
+                    break;
             }
+            phaseTimer = 1000;
+            exorcismTimer = 7300;
+            wave = 0;
         }
 
-        void EnterCombat(Unit* /*who*/)
+        void EnterCombat(Unit* /*who*/) OVERRIDE
         {
             DoCast(me, SPELL_ARTHAS_AURA);
         }
 
-        void JustDied(Unit* /*killer*/)
+        void JustDied(Unit* /*killer*/) OVERRIDE
         {
-            if (instance)
-                instance->SetData(DATA_ARTHAS_EVENT, FAIL);
+            instance->SetData(DATA_ARTHAS_EVENT, FAIL);
         }
 
         void SpawnTimeRift(uint32 timeRiftID, uint64* guidVector)
@@ -470,7 +467,7 @@ public:
             ++step;
         }
 
-        void WaypointReached(uint32 waypointId)
+        void WaypointReached(uint32 waypointId) OVERRIDE
         {
             switch (waypointId)
             {
@@ -559,9 +556,8 @@ public:
                     Talk(SAY_PHASE403);
                     break;
                 case 36:
-                    if (instance)
-                        if (GameObject* pGate = instance->instance->GetGameObject(instance->GetData64(DATA_SHKAF_GATE)))
-                            pGate->SetGoState(GO_STATE_ACTIVE);
+                    if (GameObject* pGate = instance->instance->GetGameObject(instance->GetData64(DATA_SHKAF_GATE)))
+                        pGate->SetGoState(GO_STATE_ACTIVE);
                     break;
                 case 45:
                     SetRun(true);
@@ -589,7 +585,7 @@ public:
              }
         }
 
-        void UpdateAI(uint32 diff)
+        void UpdateAI(uint32 diff) OVERRIDE
         {
             npc_escortAI::UpdateAI(diff);
 
@@ -888,8 +884,7 @@ public:
                             Talk(SAY_PHASE209);
 
                             bossEvent = DATA_MEATHOOK_EVENT;
-                            if (instance)
-                                instance->SetData(DATA_ARTHAS_EVENT, IN_PROGRESS);
+                            instance->SetData(DATA_ARTHAS_EVENT, IN_PROGRESS);
 
                             me->SetReactState(REACT_DEFENSIVE);
                             SetDespawnAtFar(false);
@@ -961,25 +956,22 @@ public:
                             break;
                         case 50: //Wait Boss death
                         case 60:
-                            if (instance)
+                            if (instance->GetData(bossEvent) == DONE)
                             {
-                                if (instance->GetData(bossEvent) == DONE)
+                                JumpToNextStep(1000);
+                                if (bossEvent == DATA_MEATHOOK_EVENT)
+                                    bossEvent = DATA_SALRAMM_EVENT;
+                                else if (bossEvent == DATA_SALRAMM_EVENT)
                                 {
-                                    JumpToNextStep(1000);
-                                    if (bossEvent == DATA_MEATHOOK_EVENT)
-                                        bossEvent = DATA_SALRAMM_EVENT;
-                                    else if (bossEvent == DATA_SALRAMM_EVENT)
-                                    {
-                                        SetHoldState(false);
-                                        bStepping = false;
-                                        bossEvent = DATA_EPOCH_EVENT;
-                                    }
+                                    SetHoldState(false);
+                                    bStepping = false;
+                                    bossEvent = DATA_EPOCH_EVENT;
                                 }
-                                else if (instance->GetData(bossEvent) == FAIL)
-                                    npc_escortAI::EnterEvadeMode();
-                                else
-                                    phaseTimer = 10000;
                             }
+                            else if (instance->GetData(bossEvent) == FAIL)
+                                npc_escortAI::EnterEvadeMode();
+                            else
+                                phaseTimer = 10000;
                             break;
                         //After Gossip 2 (waypoint 22)
                         case 61:
@@ -1069,7 +1061,7 @@ public:
                         case 72:
                         case 74:
                         case 76:
-                            if (me->isInCombat())
+                            if (me->IsInCombat())
                                 phaseTimer = 1000;
                             else
                             {
@@ -1083,7 +1075,7 @@ public:
                             }
                             break;
                         case 78:
-                            if (me->isInCombat())
+                            if (me->IsInCombat())
                                 phaseTimer = 1000;
                             else
                             {
@@ -1096,53 +1088,47 @@ public:
                             JumpToNextStep(1000);
                             break;
                         case 80:
-                            if (instance)
-                                if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
-                                {
-                                    SpawnTimeRift(17, &epochGUID);
-                                    if (Creature* epoch = Unit::GetCreature(*me, epochGUID))
-                                        epoch->AI()->Talk(SAY_PHASE314);
-                                    me->SetTarget(epochGUID);
-                                }
+                            if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
+                            {
+                                SpawnTimeRift(17, &epochGUID);
+                                if (Creature* epoch = Unit::GetCreature(*me, epochGUID))
+                                    epoch->AI()->Talk(SAY_PHASE314);
+                                me->SetTarget(epochGUID);
+                            }
                             JumpToNextStep(18000);
                             break;
                         case 81:
-                            if (instance)
-                                if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
-                                    Talk(SAY_PHASE315);
+                            if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
+                                Talk(SAY_PHASE315);
                             JumpToNextStep(6000);
                             break;
                         case 82:
-                            if (instance)
-                                if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
+                            if (instance->GetData(DATA_EPOCH_EVENT) != DONE)
+                            {
+                                if (Creature* epoch = Unit::GetCreature(*me, epochGUID))
                                 {
-                                    if (Creature* epoch = Unit::GetCreature(*me, epochGUID))
-                                    {
-                                        //Make Epoch attackable
-                                        epoch->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
-                                        epoch->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                                        epoch->SetReactState(REACT_AGGRESSIVE);
-                                    }
-
+                                    //Make Epoch attackable
+                                    epoch->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+                                    epoch->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                                    epoch->SetReactState(REACT_AGGRESSIVE);
                                 }
+
+                            }
                             JumpToNextStep(1000);
                             break;
                         case 83:
-                            if (instance)
+                            if (instance->GetData(DATA_EPOCH_EVENT) == DONE)
                             {
-                                if (instance->GetData(DATA_EPOCH_EVENT) == DONE)
-                                {
-                                    gossipStep = 3;
-                                    me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                                    bStepping = false;
-                                    bossEvent = DATA_MAL_GANIS_EVENT;
-                                    JumpToNextStep(15000);
-                                }
-                                else if (instance->GetData(DATA_EPOCH_EVENT) == FAIL)
-                                    npc_escortAI::EnterEvadeMode();
-                                else
-                                    phaseTimer = 10000;
+                                gossipStep = 3;
+                                me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                                bStepping = false;
+                                bossEvent = DATA_MAL_GANIS_EVENT;
+                                JumpToNextStep(15000);
                             }
+                            else if (instance->GetData(DATA_EPOCH_EVENT) == FAIL)
+                                npc_escortAI::EnterEvadeMode();
+                            else
+                                phaseTimer = 10000;
                             break;
                         //After Gossip 4
                         case 84:
@@ -1158,9 +1144,8 @@ public:
                                 malganisGUID = malganis->GetGUID();
                                 malganis->SetReactState(REACT_PASSIVE);
                             }
-                            if (instance)
-                                if (GameObject* pGate = instance->instance->GetGameObject(instance->GetData64(DATA_MAL_GANIS_GATE_1)))
-                                    pGate->SetGoState(GO_STATE_ACTIVE);
+                            if (GameObject* pGate = instance->instance->GetGameObject(instance->GetData64(DATA_MAL_GANIS_GATE_1)))
+                                pGate->SetGoState(GO_STATE_ACTIVE);
                             SetHoldState(false);
                             bStepping = false;
                             JumpToNextStep(0);
@@ -1180,18 +1165,15 @@ public:
                             JumpToNextStep(1000);
                             break;
                         case 88:
-                            if (instance)
+                            if (instance->GetData(DATA_MAL_GANIS_EVENT) == DONE)
                             {
-                                if (instance->GetData(DATA_MAL_GANIS_EVENT) == DONE)
-                                {
-                                    SetHoldState(false);
-                                    JumpToNextStep(1000);
-                                }
-                                else if (instance->GetData(DATA_MAL_GANIS_EVENT) == FAIL)
-                                    npc_escortAI::EnterEvadeMode();
-                                else
-                                    phaseTimer = 10000;
+                                SetHoldState(false);
+                                JumpToNextStep(1000);
                             }
+                            else if (instance->GetData(DATA_MAL_GANIS_EVENT) == FAIL)
+                                npc_escortAI::EnterEvadeMode();
+                            else
+                                phaseTimer = 10000;
                             break;
                         //After waypoint 56
                         case 89:
@@ -1201,11 +1183,8 @@ public:
                             JumpToNextStep(7000);
                             break;
                         case 90:
-                            if (instance)
-                            {
-                                instance->SetData(DATA_ARTHAS_EVENT, DONE); //Rewards: Achiev & Chest ;D
-                                me->SetTarget(instance->GetData64(DATA_MAL_GANIS_GATE_2)); //Look behind
-                            }
+                            instance->SetData(DATA_ARTHAS_EVENT, DONE); //Rewards: Achiev & Chest ;D
+                            me->SetTarget(instance->GetData64(DATA_MAL_GANIS_GATE_2)); //Look behind
                             Talk(SAY_PHASE504);
                             bStepping = false;
                             break;
@@ -1214,7 +1193,7 @@ public:
             }
 
             //Battling skills
-            if (!me->getVictim())
+            if (!me->GetVictim())
                 return;
 
             if (exorcismTimer < diff)
@@ -1243,7 +1222,7 @@ class npc_crate_helper : public CreatureScript
                 _marked = false;
             }
 
-            void SpellHit(Unit* /*caster*/, SpellInfo const* spell)
+            void SpellHit(Unit* /*caster*/, SpellInfo const* spell) OVERRIDE
             {
                 if (spell->Id == SPELL_ARCANE_DISRUPTION && !_marked)
                 {
@@ -1262,7 +1241,7 @@ class npc_crate_helper : public CreatureScript
             bool _marked;
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
             return new npc_crate_helperAI(creature);
         }

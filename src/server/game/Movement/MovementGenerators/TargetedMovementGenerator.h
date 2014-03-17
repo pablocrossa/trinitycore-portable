@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -68,10 +68,10 @@ class ChaseMovementGenerator : public TargetedMovementGeneratorMedium<T, ChaseMo
 {
     public:
         ChaseMovementGenerator(Unit* target)
-            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target) {}
+            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target) { }
         ChaseMovementGenerator(Unit* target, float offset, float angle)
-            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, offset, angle) {}
-        ~ChaseMovementGenerator() {}
+            : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, offset, angle) { }
+        ~ChaseMovementGenerator() { }
 
         MovementGeneratorType GetMovementGeneratorType() { return CHASE_MOTION_TYPE; }
 
@@ -83,7 +83,7 @@ class ChaseMovementGenerator : public TargetedMovementGeneratorMedium<T, ChaseMo
         static void _clearUnitStateMove(T* u) { u->ClearUnitState(UNIT_STATE_CHASE_MOVE); }
         static void _addUnitStateMove(T* u)  { u->AddUnitState(UNIT_STATE_CHASE_MOVE); }
         bool EnableWalking() const { return false;}
-        bool _lostTarget(T* u) const { return u->getVictim() != this->GetTarget(); }
+        bool _lostTarget(T* u) const { return u->GetVictim() != this->GetTarget(); }
         void _reachTarget(T*);
 };
 
@@ -92,10 +92,10 @@ class FollowMovementGenerator : public TargetedMovementGeneratorMedium<T, Follow
 {
     public:
         FollowMovementGenerator(Unit* target)
-            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target){}
+            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target){ }
         FollowMovementGenerator(Unit* target, float offset, float angle)
-            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target, offset, angle) {}
-        ~FollowMovementGenerator() {}
+            : TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >(target, offset, angle) { }
+        ~FollowMovementGenerator() { }
 
         MovementGeneratorType GetMovementGeneratorType() { return FOLLOW_MOTION_TYPE; }
 
@@ -108,7 +108,7 @@ class FollowMovementGenerator : public TargetedMovementGeneratorMedium<T, Follow
         static void _addUnitStateMove(T* u)  { u->AddUnitState(UNIT_STATE_FOLLOW_MOVE); }
         bool EnableWalking() const;
         bool _lostTarget(T*) const { return false; }
-        void _reachTarget(T*) {}
+        void _reachTarget(T*) { }
     private:
         void _updateSpeed(T* owner);
 };

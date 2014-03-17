@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2014 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2006-2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "mechanar.h"
 
-enum eSays
+enum Says
 {
     SAY_AGGRO                      = 0,
     SAY_SUMMON                     = 1,
@@ -52,22 +52,22 @@ enum Spells
 
 enum Events
 {
-    EVENT_FROST_ATTACK             = 0,
-    EVENT_ARCANE_BLAST             = 1,
-    EVENT_DRAGONS_BREATH           = 2,
-    EVENT_KNOCKBACK                = 3,
-    EVENT_SOLARBURN                = 4
+    EVENT_FROST_ATTACK             = 1,
+    EVENT_ARCANE_BLAST             = 2,
+    EVENT_DRAGONS_BREATH           = 3,
+    EVENT_KNOCKBACK                = 4,
+    EVENT_SOLARBURN                = 5
 };
 
 class boss_nethermancer_sepethrea : public CreatureScript
 {
-    public: boss_nethermancer_sepethrea(): CreatureScript("boss_nethermancer_sepethrea") {}
+    public: boss_nethermancer_sepethrea(): CreatureScript("boss_nethermancer_sepethrea") { }
 
         struct boss_nethermancer_sepethreaAI : public BossAI
         {
-            boss_nethermancer_sepethreaAI(Creature* creature) : BossAI(creature, DATA_NETHERMANCER_SEPRETHREA) {}
+            boss_nethermancer_sepethreaAI(Creature* creature) : BossAI(creature, DATA_NETHERMANCER_SEPRETHREA) { }
 
-            void EnterCombat(Unit* who)
+            void EnterCombat(Unit* who) OVERRIDE
             {
                 _EnterCombat();
                 events.ScheduleEvent(EVENT_FROST_ATTACK, urand(7000, 10000));
@@ -80,18 +80,18 @@ class boss_nethermancer_sepethrea : public CreatureScript
                 Talk(SAY_SUMMON);
             }
 
-            void KilledUnit(Unit* /*victim*/)
+            void KilledUnit(Unit* /*victim*/) OVERRIDE
             {
                 Talk(SAY_SLAY);
             }
 
-            void JustDied(Unit* /*killer*/)
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
                 _JustDied();
                 Talk(SAY_DEATH);
             }
 
-            void UpdateAI(uint32 diff)
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -136,20 +136,20 @@ class boss_nethermancer_sepethrea : public CreatureScript
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
             return new boss_nethermancer_sepethreaAI(creature);
         }
 };
 
-class mob_ragin_flames : public CreatureScript
+class npc_ragin_flames : public CreatureScript
 {
     public:
-        mob_ragin_flames() : CreatureScript("mob_ragin_flames") { }
+        npc_ragin_flames() : CreatureScript("npc_ragin_flames") { }
 
-            struct mob_ragin_flamesAI : public ScriptedAI
+            struct npc_ragin_flamesAI : public ScriptedAI
             {
-                mob_ragin_flamesAI(Creature* creature) : ScriptedAI(creature)
+                npc_ragin_flamesAI(Creature* creature) : ScriptedAI(creature)
                 {
                     instance = creature->GetInstanceScript();
                 }
@@ -162,7 +162,7 @@ class mob_ragin_flames : public CreatureScript
 
                 bool onlyonce;
 
-                void Reset()
+                void Reset() OVERRIDE
                 {
                     inferno_Timer = 10000;
                     flame_timer = 500;
@@ -173,23 +173,20 @@ class mob_ragin_flames : public CreatureScript
                     me->SetSpeed(MOVE_RUN, DUNGEON_MODE(0.5f, 0.7f));
                 }
 
-                void EnterCombat(Unit* /*who*/)
+                void EnterCombat(Unit* /*who*/) OVERRIDE
                 {
                 }
 
-                void UpdateAI(uint32 diff)
+                void UpdateAI(uint32 diff) OVERRIDE
                 {
                     //Check_Timer
                     if (Check_Timer <= diff)
                     {
-                        if (instance)
+                        if (instance->GetData(DATA_NETHERMANCER_SEPRETHREA) != IN_PROGRESS)
                         {
-                            if (instance->GetData(DATA_NETHERMANCER_SEPRETHREA) != IN_PROGRESS)
-                            {
-                                //remove
-                                me->setDeathState(JUST_DIED);
-                                me->RemoveCorpse();
-                            }
+                            //remove
+                            me->setDeathState(JUST_DIED);
+                            me->RemoveCorpse();
                         }
                         Check_Timer = 1000;
                     } else Check_Timer -= diff;
@@ -206,8 +203,8 @@ class mob_ragin_flames : public CreatureScript
 
                     if (inferno_Timer <= diff)
                     {
-                        DoCast(me->getVictim(), SPELL_INFERNO);
-                        me->TauntApply(me->getVictim());
+                        DoCastVictim(SPELL_INFERNO);
+                        me->TauntApply(me->GetVictim());
                         inferno_Timer = 10000;
                     } else inferno_Timer -= diff;
 
@@ -221,14 +218,14 @@ class mob_ragin_flames : public CreatureScript
                 }
 
             };
-            CreatureAI* GetAI(Creature* creature) const
+            CreatureAI* GetAI(Creature* creature) const OVERRIDE
             {
-                return new mob_ragin_flamesAI(creature);
+                return GetInstanceAI<npc_ragin_flamesAI>(creature);
             }
 };
 
 void AddSC_boss_nethermancer_sepethrea()
 {
     new boss_nethermancer_sepethrea();
-    new mob_ragin_flames();
+    new npc_ragin_flames();
 }
